@@ -1,10 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, Button } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 
 export default function Perfil({ navigation }) {
-  const handleOpenPDF = () => {
-    Linking.openURL('/'); 
-  };
+ 
 
   return (
     <View style={styles.container}>
@@ -29,13 +27,6 @@ export default function Perfil({ navigation }) {
           onPress={() => navigation.navigate('Notificacoes')}
         >
           <Text style={styles.optionText}>Notificações</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.optionButton}
-          onPress={handleOpenPDF}
-        >
-          <Text style={styles.optionText}>Sobre o Projeto</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
