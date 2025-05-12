@@ -1,0 +1,17 @@
+name: Check PR Source Branch
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verifica se a branch de origem é 'develop'
+        run: |
+          if [[ "${{ github.head_ref }}" != "develop" ]]; then
+            echo "Erro: Pull request deve ser do 'develop' branch."
+            exit 1
+          fi

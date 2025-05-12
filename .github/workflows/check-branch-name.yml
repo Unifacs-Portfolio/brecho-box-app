@@ -1,0 +1,22 @@
+name: Validate branch name on PR
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  validate-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          # Obter o nome da branch de origem do PR
+          PR_BRANCH="${{ github.head_ref }}"
+          echo "Nome da branch de origem do PR: $PR_BRANCH"
+          
+          # Verificar se a branch segue o padrão '*/'
+          if [[ "$PR_BRANCH" != */* ]]; then
+            echo "::error::A branch '$PR_BRANCH' não segue o padrão '*/'. Use 'feature/', 'bugfix/', etc."
+            exit 1
+          fi
