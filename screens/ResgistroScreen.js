@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
 
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image} from 'react-native';
-import Icon from 'react-native-vector-icons/Feather'
+import Icon from 'react-native-vector-icons/Feather';
 
-export default function RegistroScreen({navigation}){
+export default function RegistroScreen({ navigation }) {
+
     const [senhaVisivel, setSenhaVisivel] = useState(false);
     const [confirmarSenha, setConfirmarSenha] = useState('');
     const [senha, setSenha] = useState('');
@@ -74,8 +75,8 @@ export default function RegistroScreen({navigation}){
             <Text style={styles.erroTexto}>As senhas não coincidem</Text>)}
     
             <View style={styles.espacoRegistro}>
-            
-            <TouchableOpacity style = {styles.botaoRegistrar} onPress={() => navigation.navigate('/')}> {/* Fazer com que seja enviado as informações para o banco de dados */}
+            {/* Fazer com que seja enviado as informações para o banco de dados */}
+            <TouchableOpacity style = {styles.botaoRegistrar} onPress={() => navigation.navigate('/')}> 
                 <Text style ={styles.textoBotao}>
                     Registrar
                 </Text>
@@ -83,7 +84,8 @@ export default function RegistroScreen({navigation}){
 
             <View style={styles.loginContainer}>
                 <Text style={styles.textoConta}>Já tem uma conta? </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('/')}>{/* colocar a localização da tela de login aqui! */}
+                {/* colocar a localização da tela de login aqui! */}
+                <TouchableOpacity onPress={() => navigation.navigate('/')}>
                 <Text style={styles.linkEntrar}>Entrar</Text>
     </TouchableOpacity>
         </View>
@@ -116,7 +118,7 @@ fundoCurvado: {
     justifyContent: 'center', 
     position: 'absolute',
     top: 0, 
-    paddingTop: 40,
+    
 
     },
 logo: {
