@@ -1,52 +1,80 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 export default function ModificarDados({ navigation }) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
   const [senha, setSenha] = useState('');
-
-  const salvarAlteracoes = () => {
-    // Aqui você pode integrar com Firebase ou outro backend
-    Alert.alert('Sucesso', 'Seus dados foram atualizados!');
-    navigation.goBack();
-  };
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Modificar Dados</Text>
+      <Text style={styles.header}>Modificar Dados</Text>
 
-      <TextInput
-        placeholder="Nome"
-        value={nome}
-        onChangeText={setNome}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="E-mail"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-        keyboardType="email-address"
-      />
-      <TextInput
-        placeholder="Telefone"
-        value={telefone}
-        onChangeText={setTelefone}
-        style={styles.input}
-        keyboardType="phone-pad"
-      />
-      <TextInput
-        placeholder="Senha"
-        value={senha}
-        onChangeText={setSenha}
-        style={styles.input}
-        secureTextEntry
-      />
+      {/* Nome */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nome"
+          value={nome}
+          onChangeText={setNome}
+        />
+        <Ionicons name="person-outline" size={24} color={primaryColor} style={styles.icon} />
+      </View>
 
-      <TouchableOpacity style={styles.button} onPress={salvarAlteracoes}>
-        <Text style={styles.buttonText}>Salvar</Text>
+      {/* Email */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="E-mail"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <MaterialIcons name="email" size={24} color={primaryColor} style={styles.icon} />
+      </View>
+
+      {/* Telefone */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Telefone"
+          keyboardType="phone-pad"
+          value={telefone}
+          onChangeText={setTelefone}
+        />
+        <Ionicons name="call-outline" size={24} color={primaryColor} style={styles.icon} />
+      </View>
+
+      {/* Senha */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Senha"
+          secureTextEntry={!mostrarSenha}
+          value={senha}
+          onChangeText={setSenha}
+        />
+        <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
+          <Ionicons
+            name={mostrarSenha ? 'eye' : 'eye-off'}
+            size={24}
+            color={primaryColor}
+            style={styles.icon}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={styles.saveButton}>
+        <Text style={styles.saveButtonText}>Salvar Alterações</Text>
       </TouchableOpacity>
     </View>
   );
@@ -58,31 +86,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 30,
+    padding: 20,
+    paddingTop: 50,
   },
-  title: {
-    fontSize: 24,
+  header: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: primaryColor,
     marginBottom: 30,
-    alignSelf: 'center',
+    textAlign: 'center',
   },
-  input: {
-    borderWidth: 1,
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderColor: primaryColor,
+    borderWidth: 1,
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 10,
     marginBottom: 20,
   },
-  button: {
+  input: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingRight: 10,
+    fontSize: 16,
+  },
+  icon: {
+    marginLeft: 5,
+  },
+  saveButton: {
     backgroundColor: primaryColor,
-    padding: 14,
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
+    marginTop: 10,
   },
-  buttonText: {
+  saveButtonText: {
     color: '#fff',
-    fontWeight: '600',
     fontSize: 16,
+    fontWeight: '600',
   },
 });
