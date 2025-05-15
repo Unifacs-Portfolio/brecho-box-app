@@ -10,7 +10,7 @@ export default function Modificacoes({ navigation }) {
           style={styles.optionButton}
           onPress={() => navigation.navigate('ModificarDados')}
         >
-          <Text style={styles.optionText}>Modificar Dados</Text>
+          <Text style={styles.optionText}>  Modificar Dados  </Text>
         </TouchableOpacity>
 
         <TouchableOpacity

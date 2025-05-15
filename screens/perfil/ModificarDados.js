@@ -5,6 +5,7 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
@@ -14,6 +15,12 @@ export default function ModificarDados({ navigation }) {
   const [telefone, setTelefone] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+
+  const salvarAlteracoes = () => {
+    // Aqui você pode integrar com Firebase ou outro backend
+    Alert.alert('Sucesso', 'Seus dados foram atualizados!');
+    navigation.goBack();
+  };
 
   return (
     <View style={styles.container}>
@@ -73,7 +80,9 @@ export default function ModificarDados({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.saveButton}>
+      <TouchableOpacity style={styles.saveButton}
+        onPress={(salvarAlteracoes)}
+        >
         <Text style={styles.saveButtonText}>Salvar Alterações</Text>
       </TouchableOpacity>
     </View>
