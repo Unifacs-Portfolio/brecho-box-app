@@ -2,13 +2,15 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button, Text } from '@rneui/themed';
 
-
-
-
 export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text h4 style={{ marginBottom: 20 }}>Bem-vindo à Home</Text>
+
+      <Button title="Ir para Receitas"
+        onPress={() => navigation.navigate('ReceitasDeModa')}
+        buttonStyle={styles.button} 
+        />
       <Button
         title="Ir para Quiz"
         onPress={() => navigation.navigate('Quiz')}

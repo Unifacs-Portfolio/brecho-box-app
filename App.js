@@ -3,11 +3,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Inicio from './screens/welcomeScreen/Inicio';
+import RegistroScreen from './screens/ResgistroScreen';
 import HomeScreen from './screens/HomeScreen';
 import Quiz from './screens/quiz';
 import Perfil from './screens/perfil/Perfil';
 import ModificarDados from './screens/perfil/ModificarDados';
-import RegistroScreen from './screens/ResgistroScreen';
+import Modificacoes from './screens/perfil/Modificacoes';
+import ReceitasDeModa from './screens/ReceitasDeModa'; 
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +23,8 @@ export default function App() {
         <Stack.Screen name="Quiz" component={Quiz} />
         <Stack.Screen name="Perfil" component={Perfil} />
         <Stack.Screen name="ModificarDados" component={ModificarDados} />
+        <Stack.Screen name="Modificacoes" component={Modificacoes} />
+        <Stack.Screen name="ReceitasDeModa" component={ReceitasDeModa} />
       </Stack.Navigator>
     </NavigationContainer>
   );
