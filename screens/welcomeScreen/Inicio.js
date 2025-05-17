@@ -17,7 +17,7 @@ export default function Inicio({ navigation }) {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.outlinedButton}
-          onPress={() => navigation.navigate('/')}
+          onPress={() => navigation.navigate('Registro')}
         >
           <Text style={styles.outlinedButtonText}>Crie seu Perfil</Text>
         </TouchableOpacity>
