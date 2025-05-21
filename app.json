@@ -9,6 +9,12 @@
       "resizeMode": "contain",
       "backgroundColor": "#25292e"
     },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptative-icon.jpg",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
     "plugins": [
       "expo-font"
     ]
