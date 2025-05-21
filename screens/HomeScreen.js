@@ -7,22 +7,27 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <Text h4 style={{ marginBottom: 20 }}>Bem-vindo à Home</Text>
 
-      <Button title="Ir para Receitas"
+      <Button title="Receitas"
         onPress={() => navigation.navigate('ReceitasDeModa')}
         buttonStyle={styles.button} 
         />
+        <Button
+        title="Dicas"
+        onPress={() => navigation.navigate('DicasDeModa')}
+        buttonStyle={styles.button}
+      />
       <Button
-        title="Ir para Quiz"
+        title="Quiz"
         onPress={() => navigation.navigate('Quiz')}
         buttonStyle={styles.button}
       />
       <Button 
-        title="Ir para Perfil"
+        title="Perfil"
         onPress={() => navigation.navigate('Perfil')}
         buttonStyle={styles.button}
       />
       <Button
-        title="Voltar para Início"
+        title="Início"
         onPress={() => navigation.navigate('Inicio')}
         buttonStyle={[styles.button, { backgroundColor: '#555' }]}
       />
