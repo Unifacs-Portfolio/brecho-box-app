@@ -10,6 +10,7 @@ import Perfil from './screens/perfil/Perfil';
 import ModificarDados from './screens/perfil/ModificarDados';
 import Modificacoes from './screens/perfil/Modificacoes';
 import ReceitasDeModa from './screens/ReceitasDeModa'; 
+import DicasDeModa from './screens/DicasDeModa';
 
 const Stack = createNativeStackNavigator();
 
@@ -25,6 +26,7 @@ export default function App() {
         <Stack.Screen name="ModificarDados" component={ModificarDados} />
         <Stack.Screen name="Modificacoes" component={Modificacoes} />
         <Stack.Screen name="ReceitasDeModa" component={ReceitasDeModa} />
+        <Stack.Screen name="DicasDeModa" component={DicasDeModa} />
       </Stack.Navigator>
     </NavigationContainer>
   );

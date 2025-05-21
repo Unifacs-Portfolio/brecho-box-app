@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   overlayIconContainer: {
     position: 'absolute',
     right: 15,
-    top: 6,
+    bottom: 6,
     backgroundColor: '#fff',
     borderRadius: 25,
     padding: 5,
