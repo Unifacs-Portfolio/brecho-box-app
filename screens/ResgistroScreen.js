@@ -85,7 +85,7 @@ export default function RegistroScreen({ navigation }) {
                     <View style={styles.loginContainer}>
                         <Text style={styles.textoConta}>Já tem uma conta? </Text>
                         {/* colocar a localização da tela de login aqui! */}
-                        <TouchableOpacity onPress={() => navigation.navigate('/')}>
+                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                             <Text style={styles.linkEntrar}>Entrar</Text>
                         </TouchableOpacity>
                     </View>

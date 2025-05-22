@@ -24,7 +24,7 @@ export default function Inicio({ navigation }) {
 
         <TouchableOpacity
           style={styles.filledButton}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('Login')}
         >
           <Text style={styles.filledButtonText}>Entrar</Text>
         </TouchableOpacity>

@@ -11,6 +11,8 @@ import ModificarDados from './screens/perfil/ModificarDados';
 import Modificacoes from './screens/perfil/Modificacoes';
 import ReceitasDeModa from './screens/ReceitasDeModa'; 
 import DicasDeModa from './screens/DicasDeModa';
+import Login from './screens/Login';
+import ForgotPassword from './screens/ForgotPassword';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +29,8 @@ export default function App() {
         <Stack.Screen name="Modificacoes" component={Modificacoes} />
         <Stack.Screen name="ReceitasDeModa" component={ReceitasDeModa} />
         <Stack.Screen name="DicasDeModa" component={DicasDeModa} />
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       </Stack.Navigator>
     </NavigationContainer>
   );
