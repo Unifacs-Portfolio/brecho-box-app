@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check branch name
+        if: github.head_ref != 'imgbot'
         run: |
           # Obter o nome da branch de origem do PR
           PR_BRANCH="${{ github.head_ref }}"
