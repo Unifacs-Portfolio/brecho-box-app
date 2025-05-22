@@ -3,16 +3,24 @@ import {
     View, Text, TouchableOpacity,
     StyleSheet
 } from 'react-native';
+import { Image } from 'react-native';
+import logo from '../assets/brecho-box-quiz.png';
+import { Ionicons } from '@expo/vector-icons';
 
-import { quizData } from  '../utils/quizdata';
-const Quiz = () => {
+
+import { quizData } from '../utils/quizdata';
+
+
+const Quiz = ({navigation}) => {
     const [currentQuestion, setCurrentQuestion] =
         useState(0);
     const [score, setScore] = useState(0);
     const [quizCompleted, setQuizCompleted] =
         useState(false);
-    const [timeLeft, setTimeLeft] = useState(10);
+    const [timeLeft, setTimeLeft] = useState(30);
+    const [quizStarted, setQuizStarted] = useState(false);
 
+    
     useEffect(() => {
         const timer = setTimeout(() => {
             if (timeLeft > 0) {
@@ -40,7 +48,7 @@ const Quiz = () => {
         if (currentQuestion <
             quizData.length - 1) {
             setCurrentQuestion(currentQuestion + 1);
-            setTimeLeft(10);
+            setTimeLeft(30);
         } else {
             setQuizCompleted(true);
         }
@@ -50,26 +58,32 @@ const Quiz = () => {
         setCurrentQuestion(0);
         setScore(0);
         setQuizCompleted(false);
-        setTimeLeft(10);
+        setTimeLeft(30);
     };
     // Display questions and answers when the quiz is completed
-    const displayAnswers =
-        quizData.map((question, index) => (
-            <View key={index}>
-                <Text style={styles.question}>
-                    Question {index + 1}:
-                    {quizData[index].question}
-                </Text>
-                <Text style={styles.correctAnswer}>
-                    Correct Answer:
-                    {quizData[index].correctAnswer}
-                </Text>
-
-            </View>
-        ));
+    const displayAnswers = quizData.map((question, index) => (
+        <View key={index}>
+        <Text style={styles.question}>
+            {`Question ${index + 1}: ${question.question}`}
+        </Text>
+        <Text style={styles.correctAnswer}>
+            {`Correct Answer: ${question.correctAnswer}`}
+        </Text>
+        </View>
+      ));
+      
 
     return (
         <View style={styles.container}>
+            <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.navigate('Home')}
+        >
+        <Ionicons name="arrow-back" size={24} color={primaryColor} />
+        <Text style={styles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+            <Image source={logo} style={styles.logo} />
+        
             {quizCompleted ? (
                 <View>
                     <Text style={styles.score}>
@@ -109,30 +123,44 @@ const Quiz = () => {
                         ))}
                 </View>
             )}
-             
+            
+            
+            
         </View>
         
     );
     
 };
 
+const primaryColor = '#464193';
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40'
+        
+        
     },
     question: {
         fontSize: 18,
+        flexDirection: 'row',
         fontWeight: 'bold',
-        marginBottom: 20,
+        marginBottom: 10,
     },
     option: {
-        backgroundColor: '#DDDDDD',
+        borderWidth: 1,
+        width: '100%',
+        borderColor: '#464193',
+        borderRadius: 5,
+        backgroundColor: '#464193',
         padding: 10,
         marginBottom: 10,
         alignItems: 'center',
     },
     buttonText: {
+        color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
     },
@@ -142,23 +170,54 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     retestButton: {
-        backgroundColor: 'blue',
+        borderWidth: 1,
+        borderColor: '#464193',
+        borderRadius: 5,
+        backgroundColor: '#464193',
+        marginTop: 10,
         padding: 10,
         alignItems: 'center',
     },
     timer: {
         fontSize: 11,
+        color: 'white',
         fontWeight: 'bold',
-        backgroundColor: 'yellow',
-        paddingVertical: 11,
-        marginRight: 120,
+        backgroundColor: '#464193',
+        padding: 11,
+        marginRight: 110,
         borderRadius: 12,
+        marginBottom: 20,
+        width: '40%',
+        textAlign: 'center',
 
     },
     correctAnswer: {
-        color: 'green',
+        color: '#464193',
+        marginBottom: 10,
     },
+    logo: {
+        width: 300,
+        height: 100,
+        resizeMode: 'contain',
+        marginBottom: 30,
+        alignSelf: 'center',
+    },
+    backButton: {
+        position: 'absolute',
+        top: 40,
+        left: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        
+        padding: 8,
+        
+      },
+      
+      backButtonText: {
+        fontSize: 16,
+        marginLeft: 8,
+        color: '#464193',
+      },
 
 });
 export default Quiz;
-

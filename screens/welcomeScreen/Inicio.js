@@ -17,14 +17,14 @@ export default function Inicio({ navigation }) {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.outlinedButton}
-          onPress={() => navigation.navigate('/')}
+          onPress={() => navigation.navigate('Registro')}
         >
           <Text style={styles.outlinedButtonText}>Crie seu Perfil</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.filledButton}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('Login')}
         >
           <Text style={styles.filledButtonText}>Entrar</Text>
         </TouchableOpacity>
