@@ -9,7 +9,7 @@ export default function Login({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = () => {
-    console.log(email, password);
+    console.log(`Login attempt with email: ${email}`);
   };
 
   return (
