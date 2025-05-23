@@ -3,12 +3,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Inicio from './screens/welcomeScreen/Inicio';
+import RegistroScreen from './screens/ResgistroScreen';
 import HomeScreen from './screens/HomeScreen';
 import Quiz from './screens/quiz';
 import Perfil from './screens/perfil/Perfil';
-import Notificacoes from './screens/perfil/Notificacoes';
 import ModificarDados from './screens/perfil/ModificarDados';
-import RegistroScreen from './screens/ResgistroScreen';
+import Modificacoes from './screens/perfil/Modificacoes';
+import ReceitasDeModa from './screens/ReceitasDeModa'; 
+import DicasDeModa from './screens/DicasDeModa';
+import Login from './screens/Login';
+import ForgotPassword from './screens/ForgotPassword';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,8 +25,12 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Quiz" component={Quiz} />
         <Stack.Screen name="Perfil" component={Perfil} />
-        <Stack.Screen name="Notificacoes" component={Notificacoes} />
         <Stack.Screen name="ModificarDados" component={ModificarDados} />
+        <Stack.Screen name="Modificacoes" component={Modificacoes} />
+        <Stack.Screen name="ReceitasDeModa" component={ReceitasDeModa} />
+        <Stack.Screen name="DicasDeModa" component={DicasDeModa} />
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       </Stack.Navigator>
     </NavigationContainer>
   );

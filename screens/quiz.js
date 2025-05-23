@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: '40',
-        justifyContent: 'center',
+        alignItems: 'center',
     },
     question: {
         fontSize: 18,
@@ -206,5 +206,5 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         color: '#464193',
     },
-});;
+});
 export default Quiz;
