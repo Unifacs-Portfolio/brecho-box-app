@@ -137,20 +137,16 @@ const primaryColor = '#464193';
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        padding: '40',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40'
-        
-        
     },
     question: {
         fontSize: 18,
-        flexDirection: 'row',
         fontWeight: 'bold',
         marginBottom: 10,
+        color: '#464193',
     },
     option: {
-        borderWidth: 1,
         width: '100%',
         borderColor: '#464193',
         borderRadius: 5,
@@ -164,10 +160,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
+    logo: {
+        width: 300,
+        resizeMode: 'contain',
+        marginBottom: 50,
+        alignSelf: 'center',
+    },
     score: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 20,
+        color: '#464193',
     },
     retestButton: {
         borderWidth: 1,
@@ -179,28 +182,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     timer: {
-        fontSize: 11,
-        color: 'white',
+        fontSize: 15,
+        color: '#767676',
         fontWeight: 'bold',
-        backgroundColor: '#464193',
-        padding: 11,
-        marginRight: 110,
-        borderRadius: 12,
         marginBottom: 20,
-        width: '40%',
-        textAlign: 'center',
-
+        marginTop: 20,
+        flexDirection: 'row',
     },
     correctAnswer: {
-        color: '#464193',
+        color: '#767676',
         marginBottom: 10,
-    },
-    logo: {
-        width: 300,
-        height: 100,
-        resizeMode: 'contain',
-        marginBottom: 30,
-        alignSelf: 'center',
     },
     backButton: {
         position: 'absolute',
@@ -208,16 +199,12 @@ const styles = StyleSheet.create({
         left: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        
         padding: 8,
-        
-      },
-      
-      backButtonText: {
+    },
+    backButtonText: {
         fontSize: 16,
         marginLeft: 8,
         color: '#464193',
-      },
-
+    },
 });
 export default Quiz;
