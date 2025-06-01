@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: '40',
         alignItems: 'center',
+        justifyContent: 'center',
     },
     question: {
         fontSize: 18,
