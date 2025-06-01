@@ -29,7 +29,7 @@ export default function Perfil() {
           {/* Imagem principal */}
           <View style={styles.profileContainer}>
             <Image
-              source={require('../../assets/iconsLogin/carinhabranco.jpg')}
+              source={require('../../assets/iconsLogin/carinhabranco.jpg')} // <- substituir pela função de escolha de imagem do aparelho
               style={styles.mainImage}
             />
             <View style={styles.overlayIconContainer}>
