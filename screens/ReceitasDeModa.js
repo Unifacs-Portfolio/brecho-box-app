@@ -10,6 +10,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Displays fashion tips in a scrollable view. Initially shows a loading indicator
+ * while fetching mock data, then renders a list of fashion tips.
+ * @param {object} navigation - Navigation object for handling navigation actions.
+ */
+
 export default function ReceitasDeModa({ navigation }) {
   const [receitas, setReceitas] = useState([]);
   const [loading, setLoading] = useState(true);
