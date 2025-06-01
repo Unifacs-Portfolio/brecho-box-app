@@ -34,7 +34,7 @@ export default function Perfil() {
             />
             <View style={styles.overlayIconContainer}>
               <Image
-                source={require('../../assets/IconsLevel/arvore0.png')}
+                source={require('../../assets/IconsLevel/arvore0.png')} // <- substituir pelo resultado do quiz
                 style={styles.overlayIcon}
               />
             </View>
