@@ -17,37 +17,33 @@ export default function Perfil() {
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.topCurve}>
-        {/* Botão de voltar */}
+        {/* Botão de voltar fixo no topo à esquerda */}
         <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.navigate('Home')}
-              >
-                <Ionicons name="arrow-back" size={24} color={'#fff'} />
-                <Text style={styles.backButtonText}>Voltar</Text>
-              </TouchableOpacity>
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Ionicons name="arrow-back" size={24} color={'#fff'} />
+        </TouchableOpacity>
+
         <View style={styles.container}>
           {/* Imagem principal */}
           <View style={styles.profileContainer}>
             <Image
-              source={require('../../assets/iconsLogin/carinhabranco.jpg')} // -> substituir pela imagem do usuário
+              source={require('../../assets/iconsLogin/carinhabranco.jpg')} // <- substituir pela função de escolha de imagem do aparelho
               style={styles.mainImage}
             />
-
-            {/* Imagem menor com borda */}
             <View style={styles.overlayIconContainer}>
               <Image
-                source={require('../../assets/IconsLevel/arvore0.png')} // -> substituir pelo resultado do quiz
+                source={require('../../assets/IconsLevel/arvore0.png')} // <- substituir pelo resultado do quiz
                 style={styles.overlayIcon}
               />
             </View>
           </View>
 
-          {/* Nome do usuário */}
           <Text style={styles.userName}>{userName}</Text>
         </View>
       </View>
 
-      {/* Região branca - opções de modificação */}
       <View style={styles.bottomContainer}>
         <TouchableOpacity
           style={styles.editButton}
@@ -57,12 +53,15 @@ export default function Perfil() {
         </TouchableOpacity>
       </View>
     </View>
+
   );
 }
 
 const primaryColor = '#464193';
 
 const styles = StyleSheet.create({
+
+
   container: {
     flex: 1,
     alignItems: 'center',
@@ -79,9 +78,10 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'left',
-    marginBottom: 15,
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    padding: 10,
   },
 
   backButtonText: {
