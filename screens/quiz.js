@@ -137,9 +137,11 @@ const primaryColor = '#464193';
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+
         padding: 40,
         justifyContent: 'center',
         
+
     },
     question: {
         fontSize: 18,
