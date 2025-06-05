@@ -12,22 +12,22 @@ export default function HomeScreen({ navigation }) {
         buttonStyle={styles.button} 
         />
         <Button
-        title="Dicas"
+        title="   Dicas   "
         onPress={() => navigation.navigate('DicasDeModa')}
         buttonStyle={styles.button}
       />
       <Button
-        title="Quiz"
+        title="    Quiz    "
         onPress={() => navigation.navigate('Quiz')}
         buttonStyle={styles.button}
       />
       <Button 
-        title="Perfil"
+        title="   Perfil   "
         onPress={() => navigation.navigate('Perfil')}
         buttonStyle={styles.button}
       />
       <Button
-        title="Início"
+        title="   Início   "
         onPress={() => navigation.navigate('Inicio')}
         buttonStyle={[styles.button, { backgroundColor: '#555' }]}
       />
