@@ -1,58 +1,115 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import logoApp from '../assets/icon.jpg'; 
+import logoApp from '../assets/icon.jpg';
+import api from '../src/services/api';
 
 export default function ForgotPassword({ navigation }) {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleResetPassword = () => {
-    console.log(`Enviando redefinição para: ${email}`);
-    Alert.alert(
-      'Redefinição de senha',
-      'Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.'
-    );
-    navigation.navigate('Login');
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      Alert.alert('Erro', 'Por favor, informe seu e-mail');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      Alert.alert('Erro', 'Por favor, insira um e-mail válido');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const response = await api.post('/api/usuario/reset', {
+        email
+      });
+
+      // Verifica se a resposta foi bem-sucedida (status 2xx)
+      if (response.status >= 200 && response.status < 300) {
+        Alert.alert(
+          'Sucesso', 
+          'Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      } else {
+        throw new Error(response.data?.message || 'Erro ao enviar e-mail');
+      }
+    } catch (error) {
+      console.error('Erro na redefinição de senha:', error.response?.data || error.message);
+      
+      let errorMessage = 'Erro ao solicitar redefinição de senha';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Erro', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    
     <View style={styles.container}>
-      
       <View style={styles.topCurve}>
         <View style={styles.purpleBackground}></View>
-          <Image source={logoApp} style={styles.appLogo} />
+        <Image source={logoApp} style={styles.appLogo} />
         <Text style={styles.title}>Esqueceu a senha?</Text>
       </View>
 
       <View style={styles.container2}>
-      <View style={styles.form}>
-        <Text style={styles.instruction}>
-          Informe seu e-mail e vamos te ajudar a recuperar sua senha.
-        </Text>
+        <View style={styles.form}>
+          <Text style={styles.instruction}>
+            Informe seu e-mail e vamos te ajudar a recuperar sua senha.
+          </Text>
 
-        <View style={styles.inputGroup}>
-          <TextInput
-            placeholder="E-mail"
-            placeholderTextColor="#aaa"
-            style={styles.inputField}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <MaterialCommunityIcons name="email-outline" size={24} color="#464193" style={styles.inputIcon} />
+          <View style={styles.inputGroup}>
+            <TextInput
+              placeholder="E-mail"
+              placeholderTextColor="#aaa"
+              style={styles.inputField}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!loading}
+            />
+            <MaterialCommunityIcons 
+              name="email-outline" 
+              size={24} 
+              color="#464193" 
+              style={styles.inputIcon} 
+            />
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.loginButton, loading && styles.disabledButton]} 
+            onPress={handleResetPassword}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginButtonText}>Enviar e-mail</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Login')}
+            disabled={loading}
+          >
+            <Text style={styles.register}>Voltar para login</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.loginButton} onPress={handleResetPassword}>
-          <Text style={styles.loginButtonText}>Enviar e-mail</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.register}>Voltar para login</Text>
-        </TouchableOpacity>
       </View>
-    </View>
     </View>
   );
 }
@@ -64,12 +121,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-
-  container2 : {
+  container2: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   topCurve: {
     backgroundColor: '#473da1',
     height: '50%',
@@ -88,20 +143,17 @@ const styles = StyleSheet.create({
     top: 0,
     zIndex: -1,
   },
-
   appLogo: {
     width: 200,
     height: 200,
     marginBottom: 10,
   },
-
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 20,
   },
-
   form: {
     marginTop: 20,
   },
@@ -109,6 +161,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
     marginBottom: 20,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   inputGroup: {
     flexDirection: 'row',
@@ -133,6 +187,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 15,
+  },
+  disabledButton: {
+    backgroundColor: '#999',
+    opacity: 0.7,
   },
   loginButtonText: {
     color: '#fff',

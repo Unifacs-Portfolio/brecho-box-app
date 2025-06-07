@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import api from '../../src/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ModificarDados({ navigation }) {
   const [nome, setNome] = useState('');
@@ -15,15 +18,89 @@ export default function ModificarDados({ navigation }) {
   const [telefone, setTelefone] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
-  const salvarAlteracoes = () => {
-    // Aqui você pode integrar com Firebase ou outro backend
-    Alert.alert('Sucesso', 'Seus dados foram atualizados!');
-    navigation.goBack();
+  // Carrega os dados do usuário ao abrir a tela
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const { nome, email, telefone } = JSON.parse(userData);
+          setNome(nome);
+          setEmail(email);
+          setTelefone(telefone);
+          setUserEmail(email);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  const salvarAlteracoes = async () => {
+    if (loading) return;
+    
+    if (!nome || !telefone) {
+      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const updateData = {
+        nome,
+        telefone
+      };
+
+      // Adiciona a senha apenas se foi preenchida
+      if (senha) {
+        updateData.senha = senha;
+      }
+
+      const response = await api.put(`/usuario/${userEmail}`, updateData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Atualiza os dados locais
+      await AsyncStorage.setItem('userData', JSON.stringify({
+        nome,
+        email,
+        telefone
+      }));
+
+      Alert.alert('Sucesso', 'Dados atualizados com sucesso!');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Erro ao atualizar dados:', error.response?.data || error.message);
+      
+      let errorMessage = 'Erro ao atualizar dados';
+      if (error.response?.data?.errors) {
+        errorMessage = error.response.data.errors.join('\n');
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      Alert.alert('Erro', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
+       <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color={'#473da1'} />
+              </TouchableOpacity>
       <Text style={styles.header}>Modificar Dados</Text>
 
       {/* Nome */}
@@ -33,18 +110,18 @@ export default function ModificarDados({ navigation }) {
           placeholder="Nome"
           value={nome}
           onChangeText={setNome}
+          editable={!loading}
         />
         <Ionicons name="person-outline" size={24} color={primaryColor} style={styles.icon} />
       </View>
 
       {/* Email */}
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer, { backgroundColor: '#f5f5f5' }]}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: '#666' }]}
           placeholder="E-mail"
-          keyboardType="email-address"
           value={email}
-          onChangeText={setEmail}
+          editable={false}
         />
         <MaterialIcons name="email" size={24} color={primaryColor} style={styles.icon} />
       </View>
@@ -57,6 +134,7 @@ export default function ModificarDados({ navigation }) {
           keyboardType="phone-pad"
           value={telefone}
           onChangeText={setTelefone}
+          editable={!loading}
         />
         <Ionicons name="call-outline" size={24} color={primaryColor} style={styles.icon} />
       </View>
@@ -65,12 +143,16 @@ export default function ModificarDados({ navigation }) {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Senha"
+          placeholder="Nova senha"
           secureTextEntry={!mostrarSenha}
           value={senha}
           onChangeText={setSenha}
+          editable={!loading}
         />
-        <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
+        <TouchableOpacity 
+          onPress={() => setMostrarSenha(!mostrarSenha)}
+          disabled={loading}
+        >
           <Ionicons
             name={mostrarSenha ? 'eye' : 'eye-off'}
             size={24}
@@ -80,10 +162,16 @@ export default function ModificarDados({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.saveButton}
-        onPress={(salvarAlteracoes)}
-        >
-        <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+      <TouchableOpacity 
+        style={[styles.saveButton, loading && styles.disabledButton]}
+        onPress={salvarAlteracoes}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -97,6 +185,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
     paddingTop: 50,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    padding: 10,
   },
   header: {
     fontSize: 22,
@@ -129,6 +223,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#999',
   },
   saveButtonText: {
     color: '#fff',

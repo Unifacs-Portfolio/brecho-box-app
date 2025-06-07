@@ -6,43 +6,60 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../src/services/api';
 
 export default function DicasDeModa({ navigation }) {
   const [dicas, setDicas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+
+  const fetchDicas = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/dicas/tema/moda');
+      
+      // Verifica se a resposta tem a estrutura esperada
+      if (response.data && Array.isArray(response.data)) {
+        setDicas(response.data);
+      } else {
+        throw new Error('Estrutura de dados inesperada');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dicas:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as dicas');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    // Dados simulados (mock) - sem delay
-    const mockDicas = [
-      {
-        id: '1',
-        titulo: 'Use camadas para adicionar estilo',
-        descricao:
-          'Adicionar jaquetas, lenços ou coletes pode transformar completamente um look básico em algo mais interessante.',
-      },
-      {
-        id: '2',
-        titulo: 'Aposte em cores neutras',
-        descricao:
-          'Cores como branco, preto, bege e cinza são versáteis, atemporais e combinam com praticamente tudo.',
-      },
-      {
-        id: '3',
-        titulo: 'Sapatos certos fazem diferença',
-        descricao:
-          'Escolher o calçado ideal pode mudar totalmente o estilo do seu look. Invista em modelos coringas como tênis branco, bota preta e sandália nude.',
-      },
-    ];
-
-    setDicas(mockDicas);
-    setLoading(false);
+    fetchDicas();
   }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchDicas();
+  };
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
+  // Função para formatar a data
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Data não disponível';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
 
   return (
     <View style={styles.container}>
-      {/* Botão de voltar */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
@@ -52,13 +69,71 @@ export default function DicasDeModa({ navigation }) {
       {loading ? (
         <ActivityIndicator size="large" color="#fff" style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {dicas.map((item) => (
-            <View key={item.id} style={styles.card}>
-              <Text style={styles.title}>{item.titulo}</Text>
-              <Text style={styles.description}>{item.descricao}</Text>
-            </View>
-          ))}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={['#fff']}
+              tintColor="#fff"
+            />
+          }
+        >
+          {dicas.length > 0 ? (
+            dicas.map((item) => {
+              const isExpanded = expandedId === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.card}
+                  onPress={() => toggleExpand(item.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.title}>{item.titulo}</Text>
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={20}
+                      color="#464193"
+                    />
+                  </View>
+
+                  {isExpanded && (
+                    <View style={styles.expandedContent}>
+                      <Text style={styles.description}>{item.conteudo}</Text>
+                      
+                      <View style={styles.infoContainer}>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Autor: </Text>
+                          {item.idUsuario || 'Anônimo'}
+                        </Text>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Criado em: </Text>
+                          {formatDate(item.dataCriacao)}
+                        </Text>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Verificado: </Text>
+                          {item.isVerify ? 'Sim' : 'Não'}
+                        </Text>
+                        {item.subtemas && item.subtemas.length > 0 && (
+                          <Text style={styles.info}>
+                            <Text style={styles.label}>Subtemas: </Text>
+                            {item.subtemas.join(', ')}
+                          </Text>
+                        )}
+                        {item.isCreatedBySpecialist && (
+                          <Text style={styles.specialistBadge}>Dica de especialista</Text>
+                        )}
+                      </View>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyMessage}>Nenhuma dica encontrada</Text>
+          )}
         </ScrollView>
       )}
     </View>
@@ -97,15 +172,52 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
     color: '#464193',
-    marginBottom: 10,
+    marginRight: 10,
+    flexShrink: 1,
+  },
+  expandedContent: {
+    marginTop: 10,
   },
   description: {
     fontSize: 14,
     color: '#555',
     lineHeight: 20,
+    marginBottom: 12,
+  },
+  infoContainer: {
+    marginTop: 8,
+  },
+  info: {
+    fontSize: 13,
+    color: '#333',
+    marginBottom: 6,
+  },
+  label: {
+    fontWeight: 'bold',
+    color: '#464193',
+  },
+  emptyMessage: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+  },
+  specialistBadge: {
+    backgroundColor: '#464193',
+    color: '#fff',
+    padding: 4,
+    borderRadius: 4,
+    fontSize: 12,
+    alignSelf: 'flex-start',
+    marginTop: 6,
   },
 });

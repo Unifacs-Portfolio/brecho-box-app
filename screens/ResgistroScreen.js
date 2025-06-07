@@ -1,216 +1,259 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
-
-import Icon from 'react-native-vector-icons/Feather';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import logoApp from '../assets/icon.jpg';
+import api from '../src/services/api';
 
 export default function RegistroScreen({ navigation }) {
-
-    const [senhaVisivel, setSenhaVisivel] = useState(false);
-    const [confirmarSenha, setConfirmarSenha] = useState('');
+    const [nome, setNome] = useState('');
+    const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
-    const [confirmarVisivel, setConfirmarVisivel] = useState(false);
+    const [telefone, setTelefone] = useState('');
+    const [confirmarSenha, setConfirmarSenha] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const senhasIguais = senha === confirmarSenha || confirmarSenha === '';
+    const handleRegister = async () => {
+        if (loading) return;
+        
+        if (!nome || !email || !telefone || !senha || !confirmarSenha) {
+            Alert.alert('Erro', 'Preencha todos os campos.');
+            return;
+        }
+
+        if (senha !== confirmarSenha) {
+            Alert.alert('Erro', 'As senhas não coincidem.');
+            return;
+        }
+
+        setLoading(true);
+        
+        try {
+            const telefoneFormatado = telefone.replace(/\D/g, '');
+            
+            const response = await api.post('/api/usuario', {
+                nome,
+                email,
+                senha,
+                telefone: telefoneFormatado,
+                nivelConsciencia: 1,
+                isMonitor: false
+            });
+
+            Alert.alert('Sucesso', 'Conta criada com sucesso!');
+            navigation.navigate('Login');
+        } catch (error) {
+            console.error('Erro no registro:', error.response?.data || error.message);
+            Alert.alert(
+                'Erro', 
+                error.response?.data?.errors?.join('\n') || 'Não foi possível registrar'
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <View style={styles.container}>
-            <View style={styles.fundoCurvado}>
-                <Image
-                    source={require('../assets/icon.jpg')}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
-
-                <Text style={styles.title}>
-                    Crie sua conta!
-                </Text>
+            <View style={styles.topCurve}>
+                <View style={styles.purpleBackground}></View>
+                <Image source={logoApp} style={styles.appLogo} />
+                <Text style={styles.title}>Crie sua conta!</Text>
             </View>
-            <View style={styles.card}>
-                <TextInput style={styles.input} placeholder='Nome' placeholderTextColor="#473da1" />
 
-
-
-
-                <TextInput placeholder='E-mail'
-                    placeholderTextColor="#473da1"
-                    style={styles.input}
-                    keyboardType='email-address' />
-
-
-                <View style={styles.inputComIcone}>
-                    <TextInput style={styles.inputInterno}
-                        placeholder='Senha'
-                        placeholderTextColor="#473da1"
-                        secureTextEntry={!senhaVisivel}
-                        value={senha}
-                        onChangeText={setSenha} />
-
-                    <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
-                        <Icon
-                            name={senhaVisivel ? 'eye' : 'eye-off'}
-                            size={22}
-                            color='#473da1'
+            <View style={styles.container2}>
+                <View style={styles.form}>
+                    {/* Input Nome */}
+                    <View style={styles.inputGroup}>
+                        <TextInput
+                            placeholder="Nome completo"
+                            placeholderTextColor="#aaa"
+                            style={styles.inputField}
+                            value={nome}
+                            onChangeText={setNome}
                         />
-                    </TouchableOpacity>
-                </View>
-                <View style={styles.inputComIcone}>
-                    <TextInput style={styles.inputInterno}
-                        placeholder='Confirmar senha'
-                        placeholderTextColor="#473da1"
-                        secureTextEntry={!confirmarVisivel}
-                        value={confirmarSenha}
-                        onChangeText={setConfirmarSenha} />
+                        <MaterialCommunityIcons name="account-outline" size={24} color="#464193" style={styles.inputIcon} />
+                    </View>
 
-
-                    <TouchableOpacity onPress={() => setConfirmarVisivel(!confirmarVisivel)}>
-                        <Icon
-                            name={confirmarVisivel ? 'eye' : 'eye-off'}
-                            size={22}
-                            color='#473da1'
+                    {/* Input Email */}
+                    <View style={styles.inputGroup}>
+                        <TextInput
+                            placeholder="E-mail"
+                            placeholderTextColor="#aaa"
+                            style={styles.inputField}
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
                         />
+                        <MaterialCommunityIcons name="email-outline" size={24} color="#464193" style={styles.inputIcon} />
+                    </View>
 
-                    </TouchableOpacity>
-                </View>
-                {!senhasIguais && (
-                    <Text style={styles.erroTexto}>As senhas não coincidem</Text>)}
+                    {/* Input Telefone */}
+                    <View style={styles.inputGroup}>
+                        <TextInput
+                            placeholder="Telefone"
+                            placeholderTextColor="#aaa"
+                            style={styles.inputField}
+                            value={telefone}
+                            onChangeText={setTelefone}
+                            keyboardType="phone-pad"
+                        />
+                        <MaterialCommunityIcons name="phone-outline" size={24} color="#464193" style={styles.inputIcon} />
+                    </View>
 
-                <View style={styles.espacoRegistro}>
-                    {/* Fazer com que seja enviado as informações para o banco de dados */}
-                    <TouchableOpacity style={styles.botaoRegistrar} onPress={() => navigation.navigate('/')}>
-                        <Text style={styles.textoBotao}>
-                            Registrar
-                        </Text>
+                    {/* Input Senha */}
+                    <View style={styles.inputGroup}>
+                        <TextInput
+                            placeholder="Senha"
+                            placeholderTextColor="#aaa"
+                            style={styles.inputField}
+                            value={senha}
+                            onChangeText={setSenha}
+                            secureTextEntry={!showPassword}
+                        />
+                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.iconButton}>
+                            <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={24} color="#464193" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Input Confirmar Senha */}
+                    <View style={styles.inputGroup}>
+                        <TextInput
+                            placeholder="Confirmar senha"
+                            placeholderTextColor="#aaa"
+                            style={styles.inputField}
+                            value={confirmarSenha}
+                            onChangeText={setConfirmarSenha}
+                            secureTextEntry={!showConfirmPassword}
+                        />
+                        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.iconButton}>
+                            <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={24} color="#464193" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {senha !== confirmarSenha && confirmarSenha !== '' && (
+                        <Text style={styles.erroTexto}>As senhas não coincidem</Text>
+                    )}
+
+                    <TouchableOpacity 
+                        style={[styles.loginButton, loading && styles.disabledButton]} 
+                        onPress={handleRegister}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.loginButtonText}>Registrar</Text>
+                        )}
                     </TouchableOpacity>
 
                     <View style={styles.loginContainer}>
-                        <Text style={styles.textoConta}>Já tem uma conta? </Text>
-                        {/* colocar a localização da tela de login aqui! */}
+                        <Text style={styles.register}>Já tem uma conta? </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                            <Text style={styles.linkEntrar}>Entrar</Text>
+                            <Text style={styles.registerLink}>Entrar</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </View>
-            <TouchableOpacity style={styles.botao} onPress={() => navigation.goBack()}>
-                <Icon name="arrow-left" size={20} color="#473da1" />
-            </TouchableOpacity>
         </View>
     );
-
 }
+
+const primaryColor = '#464193';
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+    },
+    container2: {
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
-        paddingTop: 100,
     },
-    fundoCurvado: {
+    topCurve: {
         backgroundColor: '#473da1',
         height: '50%',
-        width: '140%',
-        borderBottomLeftRadius: 472,
-        borderBottomRightRadius: 470,
+        borderBottomLeftRadius: 200,
+        borderBottomRightRadius: 200,
         alignItems: 'center',
-        justifyContent: 'center',
+        paddingTop: 60,
+    },
+    purpleBackground: {
+        backgroundColor: primaryColor,
+        width: '150%',
+        height: 200,
+        borderBottomLeftRadius: 100,
+        borderBottomRightRadius: 100,
         position: 'absolute',
         top: 0,
-
-
+        zIndex: -1,
     },
-    logo: {
+    appLogo: {
         width: 200,
         height: 200,
-        marginBottom: 5,
-        marginLeft: 128,
-        marginRight: 123,
+        marginBottom: 10,
     },
-
     title: {
-        color: '#ffffff',
-        fontSize: 30,
+        fontSize: 24,
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 10,
-        marginLeft: 128,
-        marginRight: 123,
-    },
-
-    card: {
-        width: '100%',
-        borderRadius: 16,
-        padding: 24,
-        alignItems: 'stretch',
-        marginTop: 170
-    },
-
-    input: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#473da1',
-        marginBottom: 16,
-        paddingVertical: 8,
-    },
-    botao: {
-        backgroundColor: '#fff',
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'absolute',
-        bottom: 40,
-        right: 20,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
-    },
-    espacoRegistro: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    botaoRegistrar: {
-        backgroundColor: '#473da1',
-        paddingVertical: 12,
-        paddingHorizontal: 40,
-        borderRadius: 12,
+        color: '#fff',
         marginTop: 20,
     },
-    textoBotao: {
+    form: {
+        marginTop: 20,
+        width: '80%',
+    },
+    inputGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f2f2f2',
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        marginBottom: 15,
+    },
+    inputField: {
+        flex: 1,
+        height: 50,
+        fontSize: 16,
+        color: '#333',
+    },
+    inputIcon: {
+        marginLeft: 8,
+    },
+    iconButton: {
+        padding: 5,
+    },
+    loginButton: {
+        backgroundColor: primaryColor,
+        paddingVertical: 15,
+        borderRadius: 12,
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    disabledButton: {
+        backgroundColor: '#999',
+    },
+    loginButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
     },
-    linkEntrar: {
-        color: '#473da1',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
     loginContainer: {
         flexDirection: 'row',
-        marginTop: 16,
         justifyContent: 'center',
     },
-
+    register: {
+        color: '#555',
+    },
+    registerLink: {
+        color: primaryColor,
+        fontWeight: 'bold',
+    },
     erroTexto: {
         color: 'red',
-        marginTop: 8,
+        marginBottom: 10,
+        textAlign: 'center',
     },
-
-    inputComIcone: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        paddingVertical: 8,
-    },
-    inputInterno: {
-        flex: 1,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#473da1',
-    }
-})
+});

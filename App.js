@@ -14,6 +14,7 @@ import DicasDeModa from './screens/DicasDeModa';
 import Login from './screens/Login';
 import ForgotPassword from './screens/ForgotPassword';
 
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
