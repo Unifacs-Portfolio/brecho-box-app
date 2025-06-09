@@ -53,7 +53,7 @@ export default function DicasDeModa({ navigation }) {
 
   // Função para formatar a data
   const formatDate = (dateString) => {
-    if (!dateString) return 'Data não disponível';
+    if (!dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
   };
