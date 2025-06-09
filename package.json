@@ -17,8 +17,10 @@
     "@rneui/base": "^0.0.0-edge.2",
     "@rneui/themed": "^0.0.0-edge.2",
     "axios": "^1.9.0",
-    "expo": "^53.0.10",
+    "expo": "^53.0.11",
+    "expo-file-system": "~18.1.10",
     "expo-font": "~13.3.1",
+    "expo-image-picker": "~16.1.4",
     "expo-splash-screen": "^0.30.9",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
@@ -33,9 +35,7 @@
     "react-native-screens": "~4.11.1",
     "react-native-super-grid": "^6.0.1",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-web": "^0.20.0",
-    "expo-image-picker": "~16.1.4",
-    "expo-file-system": "~18.1.10"
+    "react-native-web": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0"
