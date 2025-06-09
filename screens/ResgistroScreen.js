@@ -35,7 +35,7 @@ export default function RegistroScreen({ navigation }) {
 
 
     const handleRegister = async () => {
-        if (loading) return;
+        if (loading) {
 
         if (!nome || !email || !telefone || !senha || !confirmarSenha) {
             Alert.alert('Erro', 'Preencha todos os campos.');

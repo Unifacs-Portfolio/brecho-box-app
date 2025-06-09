@@ -27,7 +27,7 @@ export default function ForgotPassword({ navigation }) {
     setLoading(true);
     
     try {
-      await api.post('/api/usuario/reset');
+      await api.post('/api/usuario/reset', { email: email });
       
       Alert.alert(
           'Sucesso', 

@@ -1,11 +1,11 @@
 # Projeto Mobile BrechóBox🕶️
-## Projeto da Unifacs - Consumo Sustentavel 🌱
+## Projeto da Unifacs - Consumo Sustentável 🌱
 
 **Responsáveis pelo Mobile:**
 -----------------------
-* Roan Nascimentop lisboa [GitHub](https://github.com/RoanNL) | [Linkedin](https://www.linkedin.com/in/roan-nascimento-lisboa-752533271/).
+* Roan Nascimento Lisboa [GitHub](https://github.com/RoanNL) | [LinkedIn](https://www.linkedin.com/in/roan-nascimento-lisboa-752533271/).
 
-* Ana Priscilla Silva Oliveira [GitHub](https://github.com/anapriscillasilva) | [Linkedin](https://www.linkedin.com/in/ana-priscilla-silva-oliveira-a373802b7/).
+* Ana Priscilla Silva Oliveira [GitHub](https://github.com/anapriscillasilva) | [LinkedIn](https://www.linkedin.com/in/ana-priscilla-silva-oliveira-a373802b7/).
 
 * Pedro Henrique de Oliveira Carvalho [GitHub](https://github.com/Pedrohxxz) | [Linkedin](https://www.linkedin.com/in/pedrohxxxz/)
 
@@ -29,7 +29,7 @@ Utilize Visual Studio Code ou um editor de código equivalente.
 
 * Instale as dependências do projeto usando o gerenciador de pacotes Node.js.
 
-**Execute o comando**
+**Execute os comandos**
 
   `npm install`
 
