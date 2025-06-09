@@ -5,12 +5,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen({ navigation }) {
 
-  
-
+  const logout = async () => {
+    try {
+        // Remove apenas os dados de sessão, mantendo os dados do usuário
+        await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('@currentUserEmail');
+        await AsyncStorage.removeItem('@tokenExpiration');
+        await AsyncStorage.removeItem('@quizScore');
+        
+        console.log('Usuário deslogado');
+        navigation.navigate('Login');
+    } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+    }
+};
 
   return (
     <View style={styles.container}>
-      <Text h4 style={{ marginBottom: 20 }}>Bem-vindo à Home</Text>
+      <Text h4 style={{ marginBottom: 20 }}>Bem Vindo!</Text>
 
       <Button title="Receitas"
         onPress={() => navigation.navigate('ReceitasDeModa')}
@@ -32,8 +44,8 @@ export default function HomeScreen({ navigation }) {
         buttonStyle={styles.button}
       />
       <Button
-        title="   Início   "
-        onPress={() => navigation.navigate('Inicio')}
+        title="     Sair     "
+        onPress={logout}
         buttonStyle={[styles.button, { backgroundColor: '#555' }]}
       />
     </View>

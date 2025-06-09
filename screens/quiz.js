@@ -45,6 +45,7 @@ const Quiz = ({navigation}) => {
 
     const saveQuizScore = async (score) => {
         try {
+            await AsyncStorage.setItem('@currentUserEmail', score);
             await AsyncStorage.setItem('@quizScore', score.toString());
             console.log('Pontuação salva com sucesso!');
         } catch (e) {

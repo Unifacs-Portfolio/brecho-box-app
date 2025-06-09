@@ -43,6 +43,7 @@ export default function ReceitasDeModa({ navigation }) {
     fetchReceitas();
   }, []);
 
+  // Função para atualizar as receitas
   const handleRefresh = () => {
     setRefreshing(true);
     fetchReceitas();

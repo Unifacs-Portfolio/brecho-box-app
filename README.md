@@ -3,15 +3,17 @@
 
 **Responsáveis pelo Mobile:**
 -----------------------
-* Roan Nascimentop lisboa [GitHub](https://github.com/RoanNL) [Linkedin](https://www.linkedin.com/in/roan-nascimento-lisboa-752533271/).
+* Roan Nascimentop lisboa [GitHub](https://github.com/RoanNL) | [Linkedin](https://www.linkedin.com/in/roan-nascimento-lisboa-752533271/).
 
-* Ana Priscilla Silva Oliveira [GitHub](https://github.com/anapriscillasilva) [Linkedin](https://www.linkedin.com/in/ana-priscilla-silva-oliveira-a373802b7/).
+* Ana Priscilla Silva Oliveira [GitHub](https://github.com/anapriscillasilva) | [Linkedin](https://www.linkedin.com/in/ana-priscilla-silva-oliveira-a373802b7/).
 
-* Pedro Henrique de Oliveira Carvalho [GitHub](https://github.com/Pedrohxxz) [Linkedin](https://www.linkedin.com/in/pedrohxxxz/)
+* Pedro Henrique de Oliveira Carvalho [GitHub](https://github.com/Pedrohxxz) | [Linkedin](https://www.linkedin.com/in/pedrohxxxz/)
 
-* Kleber Araujo Rodrigues [GitHub](https://github.com/KleberAr4uj0) [Linkedin](https://www.linkedin.com/in/kleber-araujo-906b662bb/)
+* Kleber Araujo Rodrigues [GitHub](https://github.com/KleberAr4uj0) | [Linkedin](https://www.linkedin.com/in/kleber-araujo-906b662bb/)
 
-* Duilio do Nascimento Brandao [Github](https://github.com/duibrandao) [Linkedin](https://www.linkedin.com/in/duilio-brand%C3%A3o-ab1292246?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app)
+* Duilio do Nascimento Brandao [Github](https://github.com/duibrandao) | [Linkedin](https://www.linkedin.com/in/duilio-brand%C3%A3o-ab1292246?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app)
+
+* Luiggi Souza Grassi [Github](https://github.com/luiggigrssi).
 
 
 ## Instruções do Projeto:

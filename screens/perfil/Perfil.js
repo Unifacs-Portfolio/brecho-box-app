@@ -182,13 +182,13 @@ export default function Perfil() {
 }, []);
 
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={primaryColor} />
-      </View>
-    );
-  }
+if (loading) {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color={primaryColor} />
+    </View>
+  );
+}
 
   return (
     <View style={{ flex: 1 }}>
@@ -226,7 +226,7 @@ export default function Perfil() {
           style={styles.editButton}
           onPress={() => navigation.navigate('Modificacoes')}
         >
-          <Text style={styles.editButtonText}>Modificações</Text>
+          <Text style={styles.editButtonText}>Configurações</Text>
         </TouchableOpacity>
       </View>
     </View>

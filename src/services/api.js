@@ -24,28 +24,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const status = error?.response?.status;
-        const data = error?.response?.data;
-        const headers = error?.response?.headers;
-
-        console.log('Erro na API:', {
-            config: error?.config || 'indefinido',
-            response: data || 'sem dados',
-            status: status || 'sem status',
-            headers: headers || 'sem headers',
-        });
-
-        if (status === 401) {
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('userData');
+        if (error.response) {
+            // Padroniza a estrutura de erro para frontend
+            error.response.data = {
+                error: error.response.data?.error || 'Erro desconhecido',
+                message: error.response.data?.message || '',
+                status: error.response.status
+            };
         }
-
-        // Rejeita com o erro formatado
-        return Promise.reject({
-            message: error?.message || 'Erro desconhecido',
-            data,
-            status,
-        });
+        return Promise.reject(error);
     }
 );
 

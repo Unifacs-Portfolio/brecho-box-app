@@ -92,6 +92,7 @@ export default function RegistroScreen({ navigation }) {
         }
     };
 
+    // Função para salvar os dados do usuário
     const saveUserData = async (email, nome) => {
         try {
             await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify({ nome }));

@@ -11,6 +11,7 @@ export default function Login({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [manterConectado, setManterConectado] = useState(true);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -39,14 +40,22 @@ export default function Login({ navigation }) {
         senha: password
       });
 
+      // Armazena o token e a preferência "manter conectado"
       const token = response.data.token;
       await AsyncStorage.setItem('userToken', token);
+      await AsyncStorage.setItem('@manterConectado', manterConectado.toString());
+
+      if (manterConectado) {
+        // Se escolheu manter conectado, armazena por mais tempo
+        await AsyncStorage.setItem('@tokenExpiration', (Date.now() + 30 * 24 * 60 * 60 * 1000).toString()); // 30 dias
+      } else {
+        // Se não, armazena por menos tempo (ex: 1 dia)
+        await AsyncStorage.setItem('@tokenExpiration', (Date.now() + 24 * 60 * 60 * 1000).toString());
+      }
 
       // Remove a imagem do último usuário, se existir
-      // Verifica se está trocando de conta
       const lastEmail = await AsyncStorage.getItem('@currentUserEmail');
       if (lastEmail && lastEmail !== email) {
-        // Remove a imagem apenas se for outro usuário
         await AsyncStorage.removeItem(`@userImage_${lastEmail}`);
       }
 
@@ -61,20 +70,39 @@ export default function Login({ navigation }) {
         }));
       }
 
-      Alert.alert('Sucesso', 'Login realizado com sucesso!');
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],
       });
 
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('Erro completo no login:', JSON.stringify(error, null, 2));
+      
       let errorMessage = 'Erro ao fazer login';
-
-      if (error.errors && error.errors.length > 0) {
-        errorMessage = error.errors[0];
-      } else if (error.message) {
-        errorMessage = error.message;
+      
+      // Verifica se é um erro do Axios com resposta da API
+      if (error.isAxiosError && error.response) {
+        const serverMessage = error.response.data?.error || error.response.data?.message;
+        
+        if (serverMessage) {
+          // Mapeia mensagens específicas da API para mensagens amigáveis
+          if (serverMessage.toLowerCase().includes('não encontrado') || 
+              serverMessage.toLowerCase().includes('usuário não encontrado') ||
+              serverMessage.toLowerCase().includes('credenciais inválidas')) {
+            errorMessage = 'E-mail ou senha incorretos';
+          } else {
+            errorMessage = serverMessage;
+          }
+        } else {
+          // Caso não tenha mensagem específica, usa o status code
+          if (error.response.status === 400 || error.response.status === 401) {
+            errorMessage = 'E-mail ou senha incorretos';
+          } else if (error.response.status === 500) {
+            errorMessage = 'Problema no servidor. Tente novamente mais tarde.';
+          }
+        }
+      } else if (error.message === 'Network Error') {
+        errorMessage = 'Sem conexão com a internet. Verifique sua rede.';
       }
 
       Alert.alert('Erro', errorMessage);
@@ -125,6 +153,17 @@ export default function Login({ navigation }) {
             <Text style={styles.forgot}>Esqueceu a senha?</Text>
           </TouchableOpacity>
 
+          <View style={styles.rememberMeContainer}>
+            <TouchableOpacity onPress={() => setManterConectado(!manterConectado)}>
+              <Ionicons
+                name={manterConectado ? 'checkbox-outline' : 'square-outline'}
+                size={24}
+                color={primaryColor}
+              />
+            </TouchableOpacity>
+            <Text style={styles.rememberMeText}>Manter-me conectado</Text>
+          </View>
+
           <TouchableOpacity
             style={styles.loginButton}
             onPress={handleLogin}
@@ -160,6 +199,17 @@ const styles = StyleSheet.create({
   container2: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+
+  rememberMeText: {
+    marginLeft: 8,
+    color: primaryColor,
   },
 
   topCurve: {

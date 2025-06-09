@@ -19,6 +19,7 @@ export default function ModificarDados({ navigation, route }) {
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [userEmail, setUserEmail] = useState('');
 
   const formatarTelefone = (valor) => {
@@ -42,7 +43,7 @@ export default function ModificarDados({ navigation, route }) {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-
+        setFetching(true);
         const currentEmail = await AsyncStorage.getItem('@currentUserEmail');
         if (!currentEmail) {
           throw new Error('Nenhum usuário logado');
@@ -78,14 +79,20 @@ export default function ModificarDados({ navigation, route }) {
 
       } catch (error) {
         console.error('Erro ao carregar dados do usuário:', error);
+      } finally {
+        setFetching(false);
       }
     };
-
+    
     loadUserData();
   }, []);
 
+  
+
   const salvarAlteracoes = async () => {
     if (loading) return;
+
+    await AsyncStorage.setItem(`@userData:${userEmail}`, JSON.stringify({ nome }));
     
     if (!nome || !telefone) {
       Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
@@ -154,6 +161,16 @@ export default function ModificarDados({ navigation, route }) {
     }
   };
 
+  
+  if (fetching) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={primaryColor} />
+        <Text style={styles.loadingText}>Carregando seus dados...</Text>
+      </View>
+    );
+  }
+  
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -252,6 +269,17 @@ const styles = StyleSheet.create({
     top: 50,
     left: 20,
     padding: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 20,
+    color: primaryColor,
+    fontSize: 16,
   },
   header: {
     fontSize: 22,

@@ -9,7 +9,9 @@ export default function Modificacoes({ navigation }) {
         // Remove apenas os dados de sessão, mantendo os dados do usuário
         await AsyncStorage.removeItem('userToken');
         await AsyncStorage.removeItem('@currentUserEmail');
+        await AsyncStorage.removeItem('@tokenExpiration');
         await AsyncStorage.removeItem('@quizScore');
+
         console.log('Usuário deslogado');
         navigation.navigate('Login');
     } catch (error) {
@@ -17,7 +19,6 @@ export default function Modificacoes({ navigation }) {
     }
 };
 
-  
   return (
     <View style={styles.container}>
       <View style={styles.optionsContainer}>
