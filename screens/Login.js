@@ -85,22 +85,22 @@ export default function Login({ navigation }) {
         const serverMessage = error.response.data?.error || error.response.data?.message;
         
         if (serverMessage) {
-          // Mapeia mensagens específicas da API para mensagens amigáveis
-          if (serverMessage.toLowerCase().includes('não encontrado') || 
-              serverMessage.toLowerCase().includes('usuário não encontrado') ||
-              serverMessage.toLowerCase().includes('credenciais inválidas')) {
-            errorMessage = 'E-mail ou senha incorretos';
-          } else {
-            errorMessage = serverMessage;
-          }
-        } else {
-          // Caso não tenha mensagem específica, usa o status code
-          if (error.response.status === 400 || error.response.status === 401) {
-            errorMessage = 'E-mail ou senha incorretos';
-          } else if (error.response.status === 500) {
-            errorMessage = 'Problema no servidor. Tente novamente mais tarde.';
-          }
-        }
+                  // Mapeia mensagens específicas da API para mensagens amigáveis
+                  if (serverMessage.toLowerCase().includes('não encontrado') || 
+                      serverMessage.toLowerCase().includes('usuário não encontrado') ||
+                      serverMessage.toLowerCase().includes('credenciais inválidas')) {
+                    errorMessage = 'E-mail ou senha incorretos';
+                  } else {
+                    errorMessage = serverMessage;
+                  }
+                }
+        else if (error.response.status === 400 || error.response.status === 401) {
+                    errorMessage = 'E-mail ou senha incorretos';
+                  }
+        else if (error.response.status === 500) {
+                    errorMessage = 'Problema no servidor. Tente novamente mais tarde.';
+                  }
+
       } else if (error.message === 'Network Error') {
         errorMessage = 'Sem conexão com a internet. Verifique sua rede.';
       }
