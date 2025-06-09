@@ -104,10 +104,7 @@ export default function ModificarDados({ navigation, route }) {
       return senha.length >= 6;
     };
 
-     if (!validatePassword(senha)) {
-          Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
-          return;
-        }
+     if (senha && !validatePassword(senha)) {
 
 
     setLoading(true);
