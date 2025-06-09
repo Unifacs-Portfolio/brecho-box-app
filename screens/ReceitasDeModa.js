@@ -55,7 +55,7 @@ export default function ReceitasDeModa({ navigation }) {
 
   // Função para formatar a data
   const formatDate = (dateString) => {
-    if (!dateString) {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
   };

@@ -105,6 +105,9 @@ export default function ModificarDados({ navigation, route }) {
     };
 
      if (senha && !validatePassword(senha)) {
+      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
 
 
     setLoading(true);
@@ -250,6 +253,7 @@ export default function ModificarDados({ navigation, route }) {
       </TouchableOpacity>
     </View>
   );
+}
 }
 
 const primaryColor = '#464193';
