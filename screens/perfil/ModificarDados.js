@@ -90,7 +90,7 @@ export default function ModificarDados({ navigation, route }) {
   
 
   const salvarAlteracoes = async () => {
-    if (loading) return;
+    if (loading) {
 
     await AsyncStorage.setItem(`@userData:${userEmail}`, JSON.stringify({ nome }));
     
