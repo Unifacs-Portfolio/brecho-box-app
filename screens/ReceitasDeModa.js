@@ -7,65 +7,61 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-/**
- * Displays fashion tips in a scrollable view. Initially shows a loading indicator
- * while fetching mock data, then renders a list of fashion tips.
- * @param {object} navigation - Navigation object for handling navigation actions.
- */
+import api from '../src/services/api';
 
 export default function ReceitasDeModa({ navigation }) {
   const [receitas, setReceitas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedIds, setExpandedIds] = useState([]);
+  const [expandedId, setExpandedId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchReceitas = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/Moda/receitas');
+      
+      // Verifica se a resposta tem a estrutura esperada
+      if (response.data && Array.isArray(response.data.dadosCru)) {
+        setReceitas(response.data.dadosCru);
+      } else {
+        throw new Error('Estrutura de dados inesperada');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar receitas:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as receitas');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    // Simula a consulta ao banco
-    setTimeout(() => {
-      setReceitas([
-        {
-          id: '1',
-          titulo: 'Look Casual com Jeans e Camiseta Branca',
-          descricao: 'Combine uma calça jeans de cintura alta com uma camiseta branca básica...',
-          foto: 'https://via.placeholder.com/300x200.png?text=Look+Casual',
-          dica: 'Ideal para passeios de fim de semana.',
-          estacao: 'Primavera/Verão',
-          materiais: 'Algodão, Jeans, Couro ecológico',
-        },
-        {
-          id: '2',
-          titulo: 'Estilo Office com Toque Fashion',
-          descricao: 'Use uma calça alfaiataria com uma blusa de seda...',
-          foto: 'https://via.placeholder.com/300x200.png?text=Estilo+Office',
-          dica: 'Perfeito para reuniões e eventos formais.',
-          estacao: 'Outono/Inverno',
-          materiais: 'Seda, Lã, Couro',
-        },
-        {
-          id: '3',
-          titulo: 'Receita de look sustentável',
-          descricao: 'Reaproveite peças vintage, como jaquetas jeans antigas...',
-          foto: 'https://via.placeholder.com/300x200.png?text=Look+Sustentável',
-          dica: 'Aposte em brechós e customizações.',
-          estacao: 'Ano todo',
-          materiais: 'Peças recicladas, Algodão orgânico',
-        },
-      ]);
-      setLoading(false);
-    }, 1500);
+    fetchReceitas();
   }, []);
 
+  // Função para atualizar as receitas
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchReceitas();
+  };
+
   const toggleExpand = (id) => {
-    setExpandedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+    setExpandedId(expandedId === id ? null : id);
+  };
+
+  // Função para formatar a data
+  const formatDate = (dateString) => {
+    if (!dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
   };
 
   return (
     <View style={styles.container}>
-      {/* Botão de voltar */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
@@ -75,41 +71,75 @@ export default function ReceitasDeModa({ navigation }) {
       {loading ? (
         <ActivityIndicator size="large" color="#fff" style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {receitas.map((item) => {
-            const isExpanded = expandedIds.includes(item.id);
-            return (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.card}
-                onPress={() => toggleExpand(item.id)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.title}>{item.titulo}</Text>
-                  <Ionicons
-                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color="#464193"
-                  />
-                </View>
-
-                {isExpanded && (
-                  <View style={styles.expandedContent}>
-                    <Image
-                      source={{ uri: item.foto }}
-                      style={styles.image}
-                      resizeMode="cover"
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={['#fff']}
+              tintColor="#fff"
+            />
+          }
+        >
+          {receitas.length > 0 ? (
+            receitas.map((item) => {
+              const isExpanded = expandedId === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.card}
+                  onPress={() => toggleExpand(item.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.title}>{item.titulo}</Text>
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={20}
+                      color="#464193"
                     />
-                    <Text style={styles.description}>{item.descricao}</Text>
-                    <Text style={styles.info}><Text style={styles.label}>Dica: </Text>{item.dica}</Text>
-                    <Text style={styles.info}><Text style={styles.label}>Estação: </Text>{item.estacao}</Text>
-                    <Text style={styles.info}><Text style={styles.label}>Materiais: </Text>{item.materiais}</Text>
                   </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+
+                  {isExpanded && (
+                    <View style={styles.expandedContent}>
+                      {item.image_source && (
+                        <Image
+                          source={{ uri: item.image_source }}
+                          style={styles.image}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <Text style={styles.description}>{item.conteudo}</Text>
+                      
+                      <View style={styles.infoContainer}>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Autor: </Text>
+                          {item.usuario?.nome || 'Anônimo'}
+                        </Text>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Criado em: </Text>
+                          {formatDate(item.data_criacao)}
+                        </Text>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Verificado: </Text>
+                          {item.is_verify ? 'Sim' : 'Não'}
+                        </Text>
+                        {item.subtemas && item.subtemas.length > 0 && (
+                          <Text style={styles.info}>
+                            <Text style={styles.label}>Subtemas: </Text>
+                            {item.subtemas.join(', ')}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyMessage}>Nenhuma receita encontrada</Text>
+          )}
         </ScrollView>
       )}
     </View>
@@ -158,6 +188,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#464193',
     marginRight: 10,
+    flexShrink: 1,
   },
   expandedContent: {
     marginTop: 10,
@@ -172,15 +203,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
     lineHeight: 20,
-    marginBottom: 8,
+    marginBottom: 12,
+  },
+  infoContainer: {
+    marginTop: 8,
   },
   info: {
     fontSize: 13,
     color: '#333',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   label: {
     fontWeight: 'bold',
     color: '#464193',
+  },
+  emptyMessage: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
   },
 });

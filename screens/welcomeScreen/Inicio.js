@@ -6,7 +6,7 @@ export default function Inicio({ navigation }) {
     <View style={styles.container}>
       <View style={styles.topCurve}>
         <Image
-          source={require('../../assets/icon.jpg')} // Altere para o caminho do seu logo
+          source={require('../../assets/icon.jpg')} 
           style={styles.logo}
           resizeMode="contain"
         />
