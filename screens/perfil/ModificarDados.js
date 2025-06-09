@@ -90,7 +90,7 @@ export default function ModificarDados({ navigation, route }) {
   
 
   const salvarAlteracoes = async () => {
-    if (loading) return;
+    if (loading) {
 
     await AsyncStorage.setItem(`@userData:${userEmail}`, JSON.stringify({ nome }));
     
@@ -104,10 +104,7 @@ export default function ModificarDados({ navigation, route }) {
       return senha.length >= 6;
     };
 
-     if (!validatePassword(senha)) {
-          Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
-          return;
-        }
+     if (senha && !validatePassword(senha)) {
 
 
     setLoading(true);
@@ -136,7 +133,7 @@ export default function ModificarDados({ navigation, route }) {
         telefone
       };
       
-      await AsyncStorage.setItem('userData', JSON.stringify(updatedUserData));
+      await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify(updatedUserData));
 
       // Envia os dados atualizados de volta para a tela de perfil
       navigation.navigate('Perfil', { 
