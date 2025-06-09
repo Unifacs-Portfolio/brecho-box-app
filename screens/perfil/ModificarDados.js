@@ -133,7 +133,7 @@ export default function ModificarDados({ navigation, route }) {
         telefone
       };
       
-      await AsyncStorage.setItem('userData', JSON.stringify(updatedUserData));
+      await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify(updatedUserData));
 
       // Envia os dados atualizados de volta para a tela de perfil
       navigation.navigate('Perfil', { 
