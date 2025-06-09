@@ -21,18 +21,61 @@ export default function ModificarDados({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState('');
 
+  const formatarTelefone = (valor) => {
+    // Remove tudo que não for número
+    const numeros = valor.replace(/\D/g, '');
+
+    // Aplica a máscara dependendo do tamanho
+    if (numeros.length <= 2) {
+        return '(' + numeros;
+    } else if (numeros.length <= 7) {
+        return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+    } else if (numeros.length <= 11) {
+        return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
+    } else {
+        // Limita a 11 dígitos (padrão brasileiro com DDD e número com 9 dígitos)
+        return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
+    }
+};
+
   // Carrega os dados do usuário ao abrir a tela
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const userData = await AsyncStorage.getItem('userData');
-        if (userData) {
-          const { nome, email, telefone } = JSON.parse(userData);
-          setNome(nome);
-          setEmail(email);
-          setTelefone(telefone);
-          setUserEmail(email);
+
+        const currentEmail = await AsyncStorage.getItem('@currentUserEmail');
+        if (!currentEmail) {
+          throw new Error('Nenhum usuário logado');
         }
+        setUserEmail(currentEmail);
+        setEmail(currentEmail);
+
+
+        const response = await api.get(`/api/usuario/${currentEmail}`);
+        
+        if (response.data) {
+          const userData = response.data.usuario || response.data;
+          setNome(userData.nome || '');
+          
+          // Formata o telefone antes de exibir
+          if (userData.telefone) {
+            setTelefone(formatarTelefone(userData.telefone));
+          } else {
+            setTelefone('');
+          }
+        }
+
+        const storedData = await AsyncStorage.getItem(`@userData:${currentEmail}`);
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          if (parsedData.nome && !nome) {
+            setNome(parsedData.nome);
+          }
+          if (parsedData.telefone && !telefone) {
+            setTelefone(formatarTelefone(parsedData.telefone));
+          }
+        }
+
       } catch (error) {
         console.error('Erro ao carregar dados do usuário:', error);
       }
@@ -48,6 +91,17 @@ export default function ModificarDados({ navigation, route }) {
       Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
       return;
     }
+
+    // Validação de senha (mínimo 6 caracteres)
+    const validatePassword = (senha) => {
+      return senha.length >= 6;
+    };
+
+     if (!validatePassword(senha)) {
+          Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
+          return;
+        }
+
 
     setLoading(true);
 
@@ -140,7 +194,7 @@ export default function ModificarDados({ navigation, route }) {
           placeholder="Telefone"
           keyboardType="phone-pad"
           value={telefone}
-          onChangeText={setTelefone}
+          onChangeText={text => setTelefone(formatarTelefone(text))} // Chama a função para formatar o telefone
           editable={!loading}
         />
         <Ionicons name="call-outline" size={24} color={primaryColor} style={styles.icon} />
@@ -150,7 +204,7 @@ export default function ModificarDados({ navigation, route }) {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Nova senha"
+          placeholder="Nova senha ou senha atual"
           secureTextEntry={!mostrarSenha}
           value={senha}
           onChangeText={setSenha}

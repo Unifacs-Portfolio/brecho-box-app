@@ -18,18 +18,9 @@ export default function Login({ navigation }) {
       return;
     }
 
-    // Validação de e-mail
-    const validateEmail = (email) => {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return re.test(email);
-    };
+    const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const validatePassword = (password) => password.length >= 6;
 
-    // Validação de senha (mínimo 6 caracteres)
-    const validatePassword = (password) => {
-      return password.length >= 6;
-    };
-
-    // No handleRegister e handleLogin, adicione:
     if (!validateEmail(email)) {
       Alert.alert('Erro', 'Por favor, insira um e-mail válido');
       return;
@@ -42,32 +33,40 @@ export default function Login({ navigation }) {
 
     try {
       setLoading(true);
+
       const response = await api.post('/api/usuario/login', {
         email,
         senha: password
       });
 
-      // Salva o token no AsyncStorage
       const token = response.data.token;
       await AsyncStorage.setItem('userToken', token);
 
-      // Busca os dados do usuário após login bem-sucedido
+      // Remove a imagem do último usuário, se existir
+      // Verifica se está trocando de conta
+      const lastEmail = await AsyncStorage.getItem('@currentUserEmail');
+      if (lastEmail && lastEmail !== email) {
+        // Remove a imagem apenas se for outro usuário
+        await AsyncStorage.removeItem(`@userImage_${lastEmail}`);
+      }
+
+      // Salva o email do novo usuário
+      await AsyncStorage.setItem('@currentUserEmail', email);
+
+      // Busca os dados do usuário
       const userResponse = await api.get(`/api/usuario/${email}`);
-      const userData = userResponse.data;
+      if (userResponse.data) {
+        await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify({
+          nome: userResponse.data.nome || userResponse.data.usuario?.nome
+        }));
+      }
 
-      await AsyncStorage.setItem('userData', JSON.stringify({
-        nome: userData.nome,
-        email: userData.email,
-        telefone: userData.telefone
-      }));
-
-      // Navega para a tela principal
+      Alert.alert('Sucesso', 'Login realizado com sucesso!');
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],
       });
 
-      
     } catch (error) {
       console.error('Erro no login:', error);
       let errorMessage = 'Erro ao fazer login';
@@ -83,6 +82,7 @@ export default function Login({ navigation }) {
       setLoading(false);
     }
   };
+
 
   return (
     <View style={styles.container}>
@@ -125,8 +125,8 @@ export default function Login({ navigation }) {
             <Text style={styles.forgot}>Esqueceu a senha?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.loginButton} 
+          <TouchableOpacity
+            style={styles.loginButton}
             onPress={handleLogin}
             disabled={loading}
           >

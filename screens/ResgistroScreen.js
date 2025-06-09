@@ -34,25 +34,33 @@ export default function RegistroScreen({ navigation }) {
     };
 
 
-
     const handleRegister = async () => {
         if (loading) return;
-    
+
         if (!nome || !email || !telefone || !senha || !confirmarSenha) {
             Alert.alert('Erro', 'Preencha todos os campos.');
             return;
         }
-    
+
         if (senha !== confirmarSenha) {
             Alert.alert('Erro', 'As senhas não coincidem.');
             return;
         }
-    
+
+        const validatePassword = (senha) => {
+            return senha.length >= 6;
+        };
+
+        if (!validatePassword(senha)) {
+            Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
+            return;
+        }
+
         setLoading(true);
-    
+
         try {
             const telefoneFormatado = telefone.replace(/\D/g, '');
-    
+        
             const response = await api.post('/api/usuario', {
                 nome,
                 email,
@@ -62,9 +70,9 @@ export default function RegistroScreen({ navigation }) {
                 nivelConsciencia: "1",
                 isMonitor: false
             });
-    
-            await AsyncStorage.setItem('userData', JSON.stringify({ nome }));
-    
+        
+            await saveUserData(email, nome);
+            
             Alert.alert(
                 'Sucesso!',
                 'Conta criada com sucesso!',
@@ -73,7 +81,7 @@ export default function RegistroScreen({ navigation }) {
         } catch (error) {
             const erroServidor = error.response?.data?.errors?.[0];
             const status = error.response?.status;
-    
+
             if (status === 409 || erroServidor?.toLowerCase().includes('email')) {
                 Alert.alert('Erro', 'Este e-mail já está em uso. Tente outro.');
             } else {
@@ -81,6 +89,16 @@ export default function RegistroScreen({ navigation }) {
             }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const saveUserData = async (email, nome) => {
+        try {
+            await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify({ nome }));
+            await AsyncStorage.setItem('@currentUserEmail', email);
+            console.log('Dados do usuário salvos:', email);
+        } catch (error) {
+            console.error('Erro ao salvar dados do usuário:', error);
         }
     };
 
@@ -176,7 +194,8 @@ export default function RegistroScreen({ navigation }) {
 
                     <View style={styles.loginContainer}>
                         <Text style={styles.register}>Já tem uma conta? </Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                        <TouchableOpacity onPress={saveUserData}
+                        >
                             <Text style={styles.registerLink}>Entrar</Text>
                         </TouchableOpacity>
                     </View>

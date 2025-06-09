@@ -1,7 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Modificacoes({ navigation }) {
+
+  const logout = async () => {
+    try {
+        // Remove apenas os dados de sessão, mantendo os dados do usuário
+        await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('@currentUserEmail');
+        await AsyncStorage.removeItem('@quizScore');
+        console.log('Usuário deslogado');
+        navigation.navigate('Login');
+    } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+    }
+};
+
   
   return (
     <View style={styles.container}>
@@ -22,7 +37,7 @@ export default function Modificacoes({ navigation }) {
 
         <TouchableOpacity
           style={[styles.optionButton, styles.logoutButton]}
-          onPress={() => navigation.navigate('Login')}
+          onPress={logout}
         >
           <Text style={[styles.optionText, styles.logoutText]}>Logout</Text>
         </TouchableOpacity>

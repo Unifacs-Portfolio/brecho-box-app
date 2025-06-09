@@ -116,12 +116,6 @@ export default function DicasDeModa({ navigation }) {
                           <Text style={styles.label}>Verificado: </Text>
                           {item.isVerify ? 'Sim' : 'Não'}
                         </Text>
-                        {item.subtemas && item.subtemas.length > 0 && (
-                          <Text style={styles.info}>
-                            <Text style={styles.label}>Subtemas: </Text>
-                            {item.subtemas.join(', ')}
-                          </Text>
-                        )}
                         {item.isCreatedBySpecialist && (
                           <Text style={styles.specialistBadge}>Dica de especialista</Text>
                         )}

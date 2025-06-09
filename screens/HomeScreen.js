@@ -1,8 +1,13 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button, Text } from '@rneui/themed';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen({ navigation }) {
+
+  
+
+
   return (
     <View style={styles.container}>
       <Text h4 style={{ marginBottom: 20 }}>Bem-vindo à Home</Text>
