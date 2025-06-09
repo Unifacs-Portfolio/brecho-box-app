@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'https://api-consumo-app.onrender.com/',
+    baseURL: 'https://api-consumo-app.onrender.com',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -20,32 +20,32 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Interceptor para tratamento de erros
+// Interceptor para tratamento de resposta e erros
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response) {
+    async (error) => {
+        const status = error?.response?.status;
+        const data = error?.response?.data;
+        const headers = error?.response?.headers;
 
-            if (error.response.status === 401) {
-                AsyncStorage.removeItem('userToken');
-                AsyncStorage.removeItem('userData');
-            }
-            return Promise.reject(error.response.data);
-        }
-        return Promise.reject(error);
-    }
-);
-
-api.interceptors.response.use(
-    response => response,
-    error => {
         console.log('Erro na API:', {
-            config: error.config,
-            response: error.response?.data,
-            status: error.response?.status,
-            headers: error.response?.headers
+            config: error?.config || 'indefinido',
+            response: data || 'sem dados',
+            status: status || 'sem status',
+            headers: headers || 'sem headers',
         });
-        return Promise.reject(error);
+
+        if (status === 401) {
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('userData');
+        }
+
+        // Rejeita com o erro formatado
+        return Promise.reject({
+            message: error?.message || 'Erro desconhecido',
+            data,
+            status,
+        });
     }
 );
 

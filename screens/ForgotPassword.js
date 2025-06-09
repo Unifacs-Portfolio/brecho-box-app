@@ -27,21 +27,19 @@ export default function ForgotPassword({ navigation }) {
     setLoading(true);
     
     try {
-      const response = await api.post('/api/usuario/reset', {
-        email
-      });
-
-      // Verifica se a resposta foi bem-sucedida (status 2xx)
-      if (response.status >= 200 && response.status < 300) {
-        Alert.alert(
+      await api.post('/api/usuario/reset');
+      
+      Alert.alert(
           'Sucesso', 
-          'Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-        );
-      } else {
-        throw new Error(response.data?.message || 'Erro ao enviar e-mail');
-      }
-    } catch (error) {
+          'Um token de redefinição foi enviado para seu e-mail. Verifique sua caixa de entrada.',
+          [
+              { 
+                  text: 'OK', 
+                  onPress: () => navigation.navigate('Login') 
+              }
+          ]
+      );throw new Error(response.data?.message || 'Erro ao enviar e-mail');
+      } catch (error) {
       console.error('Erro na redefinição de senha:', error.response?.data || error.message);
       
       let errorMessage = 'Erro ao solicitar redefinição de senha';
@@ -124,6 +122,7 @@ const styles = StyleSheet.create({
   container2: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   topCurve: {
     backgroundColor: '#473da1',

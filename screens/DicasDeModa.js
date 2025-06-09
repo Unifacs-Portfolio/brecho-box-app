@@ -21,7 +21,7 @@ export default function DicasDeModa({ navigation }) {
   const fetchDicas = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/Cosme/dicas');
+      const response = await api.get('/api/Moda/dicas');
       
       // Verifica se a resposta tem a estrutura esperada
       if (response.data && Array.isArray(response.data)) {

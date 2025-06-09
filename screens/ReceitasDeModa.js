@@ -22,7 +22,7 @@ export default function ReceitasDeModa({ navigation }) {
   const fetchReceitas = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/Cosme/receitas');
+      const response = await api.get('/api/Moda/receitas');
       
       // Verifica se a resposta tem a estrutura esperada
       if (response.data && Array.isArray(response.data.dadosCru)) {

@@ -12,7 +12,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function ModificarDados({ navigation }) {
+export default function ModificarDados({ navigation, route }) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -62,21 +62,28 @@ export default function ModificarDados({ navigation }) {
         updateData.senha = senha;
       }
 
-      const response = await api.put(`/usuario/${userEmail}`, updateData, {
+      const response = await api.put(`/api/usuario/${userEmail}`, updateData, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
 
       // Atualiza os dados locais
-      await AsyncStorage.setItem('userData', JSON.stringify({
+      const updatedUserData = {
         nome,
         email,
         telefone
-      }));
+      };
+      
+      await AsyncStorage.setItem('userData', JSON.stringify(updatedUserData));
+
+      // Envia os dados atualizados de volta para a tela de perfil
+      navigation.navigate('Perfil', { 
+        updatedData: updatedUserData,
+        refresh: true 
+      });
 
       Alert.alert('Sucesso', 'Dados atualizados com sucesso!');
-      navigation.goBack();
     } catch (error) {
       console.error('Erro ao atualizar dados:', error.response?.data || error.message);
       
@@ -95,14 +102,14 @@ export default function ModificarDados({ navigation }) {
 
   return (
     <View style={styles.container}>
-       <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Ionicons name="arrow-back" size={24} color={'#473da1'} />
-              </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color={'#473da1'} />
+      </TouchableOpacity>
+      
       <Text style={styles.header}>Modificar Dados</Text>
-
       {/* Nome */}
       <View style={styles.inputContainer}>
         <TextInput

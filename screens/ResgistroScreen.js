@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert, Acti
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import logoApp from '../assets/icon.jpg';
 import api from '../src/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegistroScreen({ navigation }) {
     const [nome, setNome] = useState('');
@@ -14,41 +15,70 @@ export default function RegistroScreen({ navigation }) {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    // Função para formatar o telefone no padrão (XX) XXXXX-XXXX
+    const formatarTelefone = (valor) => {
+        // Remove tudo que não for número
+        const numeros = valor.replace(/\D/g, '');
+
+        // Aplica a máscara dependendo do tamanho
+        if (numeros.length <= 2) {
+            return '(' + numeros;
+        } else if (numeros.length <= 7) {
+            return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+        } else if (numeros.length <= 11) {
+            return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
+        } else {
+            // Limita a 11 dígitos (padrão brasileiro com DDD e número com 9 dígitos)
+            return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
+        }
+    };
+
+
+
     const handleRegister = async () => {
         if (loading) return;
-        
+    
         if (!nome || !email || !telefone || !senha || !confirmarSenha) {
             Alert.alert('Erro', 'Preencha todos os campos.');
             return;
         }
-
+    
         if (senha !== confirmarSenha) {
             Alert.alert('Erro', 'As senhas não coincidem.');
             return;
         }
-
+    
         setLoading(true);
-        
+    
         try {
             const telefoneFormatado = telefone.replace(/\D/g, '');
-            
+    
             const response = await api.post('/api/usuario', {
                 nome,
                 email,
                 senha,
+                tokens: 'random-token-' + Math.random().toString(36).substring(2),
                 telefone: telefoneFormatado,
-                nivelConsciencia: 1,
+                nivelConsciencia: "1",
                 isMonitor: false
             });
-
-            Alert.alert('Sucesso', 'Conta criada com sucesso!');
-            navigation.navigate('Login');
-        } catch (error) {
-            console.error('Erro no registro:', error.response?.data || error.message);
+    
+            await AsyncStorage.setItem('userData', JSON.stringify({ nome }));
+    
             Alert.alert(
-                'Erro', 
-                error.response?.data?.errors?.join('\n') || 'Não foi possível registrar'
+                'Sucesso!',
+                'Conta criada com sucesso!',
+                [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
             );
+        } catch (error) {
+            const erroServidor = error.response?.data?.errors?.[0];
+            const status = error.response?.status;
+    
+            if (status === 409 || erroServidor?.toLowerCase().includes('email')) {
+                Alert.alert('Erro', 'Este e-mail já está em uso. Tente outro.');
+            } else {
+                Alert.alert('Erro no registro', erroServidor || 'Não foi possível concluir o registro.');
+            }
         } finally {
             setLoading(false);
         }
@@ -64,7 +94,6 @@ export default function RegistroScreen({ navigation }) {
 
             <View style={styles.container2}>
                 <View style={styles.form}>
-                    {/* Input Nome */}
                     <View style={styles.inputGroup}>
                         <TextInput
                             placeholder="Nome completo"
@@ -76,7 +105,6 @@ export default function RegistroScreen({ navigation }) {
                         <MaterialCommunityIcons name="account-outline" size={24} color="#464193" style={styles.inputIcon} />
                     </View>
 
-                    {/* Input Email */}
                     <View style={styles.inputGroup}>
                         <TextInput
                             placeholder="E-mail"
@@ -90,20 +118,18 @@ export default function RegistroScreen({ navigation }) {
                         <MaterialCommunityIcons name="email-outline" size={24} color="#464193" style={styles.inputIcon} />
                     </View>
 
-                    {/* Input Telefone */}
                     <View style={styles.inputGroup}>
                         <TextInput
                             placeholder="Telefone"
                             placeholderTextColor="#aaa"
                             style={styles.inputField}
                             value={telefone}
-                            onChangeText={setTelefone}
+                            onChangeText={text => setTelefone(formatarTelefone(text))}
                             keyboardType="phone-pad"
                         />
                         <MaterialCommunityIcons name="phone-outline" size={24} color="#464193" style={styles.inputIcon} />
                     </View>
 
-                    {/* Input Senha */}
                     <View style={styles.inputGroup}>
                         <TextInput
                             placeholder="Senha"
@@ -118,7 +144,6 @@ export default function RegistroScreen({ navigation }) {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Input Confirmar Senha */}
                     <View style={styles.inputGroup}>
                         <TextInput
                             placeholder="Confirmar senha"
@@ -137,8 +162,8 @@ export default function RegistroScreen({ navigation }) {
                         <Text style={styles.erroTexto}>As senhas não coincidem</Text>
                     )}
 
-                    <TouchableOpacity 
-                        style={[styles.loginButton, loading && styles.disabledButton]} 
+                    <TouchableOpacity
+                        style={[styles.loginButton, loading && styles.disabledButton]}
                         onPress={handleRegister}
                         disabled={loading}
                     >
@@ -164,14 +189,8 @@ export default function RegistroScreen({ navigation }) {
 const primaryColor = '#464193';
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    container2: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+    container: { flex: 1, backgroundColor: '#fff' },
+    container2: { alignItems: 'center', justifyContent: 'center' },
     topCurve: {
         backgroundColor: '#473da1',
         height: '50%',
@@ -201,10 +220,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         marginTop: 20,
     },
-    form: {
-        marginTop: 20,
-        width: '80%',
-    },
+    form: { marginTop: 20, width: '80%' },
     inputGroup: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -213,47 +229,27 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         marginBottom: 15,
     },
-    inputField: {
-        flex: 1,
-        height: 50,
-        fontSize: 16,
-        color: '#333',
-    },
-    inputIcon: {
-        marginLeft: 8,
-    },
-    iconButton: {
-        padding: 5,
-    },
+    inputField: { flex: 1, height: 50, fontSize: 16, color: '#333' },
+    inputIcon: { marginLeft: 8 },
+    iconButton: { padding: 5 },
     loginButton: {
         backgroundColor: primaryColor,
         paddingVertical: 15,
         borderRadius: 12,
         alignItems: 'center',
-        marginBottom: 15,
-    },
-    disabledButton: {
-        backgroundColor: '#999',
-    },
-    loginButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    loginContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-    },
-    register: {
-        color: '#555',
-    },
-    registerLink: {
-        color: primaryColor,
-        fontWeight: 'bold',
-    },
-    erroTexto: {
-        color: 'red',
         marginBottom: 10,
+    },
+    disabledButton: { backgroundColor: '#999' },
+    loginButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    erroTexto: { color: 'red', marginBottom: 10, textAlign: 'center' },
+    loginContainer: { flexDirection: 'row', justifyContent: 'center' },
+    register: { color: '#555' },
+    registerLink: { color: primaryColor, fontWeight: 'bold' },
+    observacao: {
+        color: '#888',
+        fontSize: 13,
         textAlign: 'center',
+        marginBottom: 15,
+        marginTop: -5,
     },
 });

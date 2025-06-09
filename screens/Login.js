@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logoApp from '../assets/icon.jpg';
@@ -10,7 +10,7 @@ export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -35,28 +35,39 @@ export default function Login({ navigation }) {
       return;
     }
 
-    if (!validatePassword(senha)) {
+    if (!validatePassword(password)) {
       Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
       return;
     }
 
     try {
+      setLoading(true);
       const response = await api.post('/api/usuario/login', {
         email,
-        senha: password,
+        senha: password
       });
 
-      const { token, usuario } = response.data;
-
-      // Armazena o token e os dados do usuário
+      // Salva o token no AsyncStorage
+      const token = response.data.token;
       await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('userData', JSON.stringify(usuario));
+
+      // Busca os dados do usuário após login bem-sucedido
+      const userResponse = await api.get(`/api/usuario/${email}`);
+      const userData = userResponse.data;
+
+      await AsyncStorage.setItem('userData', JSON.stringify({
+        nome: userData.nome,
+        email: userData.email,
+        telefone: userData.telefone
+      }));
 
       // Navega para a tela principal
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],
       });
+
+      
     } catch (error) {
       console.error('Erro no login:', error);
       let errorMessage = 'Erro ao fazer login';
@@ -68,6 +79,8 @@ export default function Login({ navigation }) {
       }
 
       Alert.alert('Erro', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,8 +125,16 @@ export default function Login({ navigation }) {
             <Text style={styles.forgot}>Esqueceu a senha?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.loginButtonText}>Entrar</Text>
+          <TouchableOpacity 
+            style={styles.loginButton} 
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginButtonText}>Entrar</Text>
+            )}
           </TouchableOpacity>
 
           <Text style={styles.register}>

@@ -29,10 +29,10 @@ const Quiz = ({navigation}) => {
     // Mapeamento dos ícones baseados na pontuação
     const treeIcons = [
         arvore0,   // 0 acertos
-        arvore0,  // 1 acerto
-        arvore1,   // 2 acertos
-        arvore2,    // 3 acertos
-        arvore3,    // 4 acertos
+        arvore1,  // 1 acerto
+        arvore2,   // 2 acertos
+        arvore3,    // 3 acertos
+        arvore4,    // 4 acertos
         arvore4     // 5 acertos (usando o mesmo do 4 ou pode adicionar outra imagem se tiver)
     ];
 
