@@ -1,30 +1,55 @@
 export const quizData = [
     {
-        question: "What is the capital of France?",
-        options: ["London", "Berlin", "Paris", "Madrid"],
-        correctAnswer: "Paris",
+        question: "Qual a origem da palavra moda?",
+        options: [
+            "Deriva do francês 'mode', criado durante a Revolução Francesa.", 
+            "Tem origem no grego 'modas'.", 
+            "Vem do inglês 'model', usado para definir padrões de roupas.",
+            "Surge do espanhol 'modo', utilizado para indicar tendências.",
+            "Origina-se do Latim 'modus' que significa 'modo', 'maneira' ou 'medida'." 
+            ],
+        correctAnswer: "Origina-se do Latim 'modus' que significa 'modo', 'maneira' ou 'medida'." ,
     },
     {
-        question: "What is 2 + 2?",
-        options: ["3", "4", "5", "6"],
-        correctAnswer: "4",
+        question: "Qual desses estilos é mais associado à estética “minimalista” na moda?",
+        options: [
+            "Estampas florais e cores vibrantes", 
+            "Tecidos fluidos e acessórios chamativos", 
+            "Cores neutras, cortes simples e poucos detalhes", 
+            "Sobreposições exageradas e peças oversized", 
+            "Roupas com brilhos, lantejoulas e aplicações"],
+        correctAnswer: "Cores neutras, cortes simples e poucos detalhes",
     },
     {
-        question: "What is the largest ocean on Earth?",
-        options: ["Pacific Ocean", "Atlantic Ocean", 
-                "Indian Ocean", "Arctic Ocean"],
-        correctAnswer: "Pacific Ocean",
+        question: "Onde surgiu a primeira semana de moda?",
+        options: [
+            "Paris",
+            "Milão", 
+            "Nova York", 
+            "Londres",
+            "Tóquio"
+    ],
+        correctAnswer: "Nova York",
     },
     {
-        question: "What is the tallest mountain on Earth?",
-        options: ["Mount Everest", "Mount Kilimanjaro", 
-                "Mount Fuji", "Mount Denali"],
-        correctAnswer: "Mount Everest",
+        question: "O que é “fast fashion”?",
+        options: [
+            "Moda rápida, barata e com produção em massa.", 
+            "Roupas de corrida com baixo custo.", 
+            "Um estilo minimalista de moda.", 
+            "Roupas feitas com tecidos leves.",
+            ],
+        correctAnswer: "Moda rápida, barata e com produção em massa.",
     },
     {
-        question: "What is the chemical symbol for water?",
-        options: ["H2O", "CO2", "O2", "N2"],
-        correctAnswer: "H2O",
+        question: "Qual destes estilos de moda é caracterizado por roupas escuras, maquiagem pesada e uma estética inspirada no romantismo e na cultura underground?",
+        options: [
+            "Clássico", 
+            "Gótico", 
+            "Esportivo", 
+            "Minimalista",
+            "Boho"],
+        correctAnswer: "Gótico",
     },
 ];
 

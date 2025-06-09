@@ -6,50 +6,62 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
+  Alert,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../src/services/api';
 
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Displays fashion tips in a scrollable view. Initially shows a loading indicator
- * while fetching mock data, then renders a list of fashion tips.
- * @param {object} navigation - Navigation object for handling navigation actions.
- */
-
-/*******  0474fc98-cec8-435c-bb68-ca8d4a0c2b20  *******/export default function ReceitasDeModa({ navigation }) {
+export default function ReceitasDeModa({ navigation }) {
   const [receitas, setReceitas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchReceitas = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/Moda/receitas');
+      
+      // Verifica se a resposta tem a estrutura esperada
+      if (response.data && Array.isArray(response.data.dadosCru)) {
+        setReceitas(response.data.dadosCru);
+      } else {
+        throw new Error('Estrutura de dados inesperada');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar receitas:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as receitas');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulando requisição com mock de dados
-    setTimeout(() => {
-      setReceitas([
-        {
-          id: '1',
-          titulo: 'Look Casual com Jeans e Camiseta Branca',
-          descricao:
-            'Combine uma calça jeans de cintura alta com uma camiseta branca básica, acessórios dourados e um tênis branco para um visual casual-chique.',
-        },
-        {
-          id: '2',
-          titulo: 'Estilo Office com Toque Fashion',
-          descricao:
-            'Use uma calça alfaiataria com uma blusa de seda e sapato de salto nude. Complete com uma bolsa estruturada e um blazer moderno.',
-        },
-        {
-          id: '3',
-          titulo: 'Receita de look sustentável',
-          descricao:
-            'Reaproveite peças vintage, como jaquetas jeans antigas, combinando com vestidos florais leves e botas para um visual boho ecológico.',
-        },
-      ]);
-      setLoading(false);
-    }, 1500);
+    fetchReceitas();
   }, []);
+
+  // Função para atualizar as receitas
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchReceitas();
+  };
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
+  // Função para formatar a data
+  const formatDate = (dateString) => {
+    if (!dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
 
   return (
     <View style={styles.container}>
-      {/* Botão de voltar */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
@@ -59,13 +71,75 @@ import { Ionicons } from '@expo/vector-icons';
       {loading ? (
         <ActivityIndicator size="large" color="#fff" style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {receitas.map((item) => (
-            <View key={item.id} style={styles.card}>
-              <Text style={styles.title}>{item.titulo}</Text>
-              <Text style={styles.description}>{item.descricao}</Text>
-            </View>
-          ))}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={['#fff']}
+              tintColor="#fff"
+            />
+          }
+        >
+          {receitas.length > 0 ? (
+            receitas.map((item) => {
+              const isExpanded = expandedId === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.card}
+                  onPress={() => toggleExpand(item.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.title}>{item.titulo}</Text>
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={20}
+                      color="#464193"
+                    />
+                  </View>
+
+                  {isExpanded && (
+                    <View style={styles.expandedContent}>
+                      {item.image_source && (
+                        <Image
+                          source={{ uri: item.image_source }}
+                          style={styles.image}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <Text style={styles.description}>{item.conteudo}</Text>
+                      
+                      <View style={styles.infoContainer}>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Autor: </Text>
+                          {item.usuario?.nome || 'Anônimo'}
+                        </Text>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Criado em: </Text>
+                          {formatDate(item.data_criacao)}
+                        </Text>
+                        <Text style={styles.info}>
+                          <Text style={styles.label}>Verificado: </Text>
+                          {item.is_verify ? 'Sim' : 'Não'}
+                        </Text>
+                        {item.subtemas && item.subtemas.length > 0 && (
+                          <Text style={styles.info}>
+                            <Text style={styles.label}>Subtemas: </Text>
+                            {item.subtemas.join(', ')}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyMessage}>Nenhuma receita encontrada</Text>
+          )}
         </ScrollView>
       )}
     </View>
@@ -104,15 +178,49 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
     color: '#464193',
+    marginRight: 10,
+    flexShrink: 1,
+  },
+  expandedContent: {
+    marginTop: 10,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
     marginBottom: 10,
   },
   description: {
     fontSize: 14,
     color: '#555',
     lineHeight: 20,
+    marginBottom: 12,
+  },
+  infoContainer: {
+    marginTop: 8,
+  },
+  info: {
+    fontSize: 13,
+    color: '#333',
+    marginBottom: 6,
+  },
+  label: {
+    fontWeight: 'bold',
+    color: '#464193',
+  },
+  emptyMessage: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
   },
 });
