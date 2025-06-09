@@ -41,7 +41,7 @@ export default function Login({ navigation }) {
       });
 
       // Armazena o token e a preferência "manter conectado"
-      const token = response.data.token;
+      const {token} = response.data;
       await AsyncStorage.setItem('userToken', token);
       await AsyncStorage.setItem('@manterConectado', manterConectado.toString());
 
