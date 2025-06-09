@@ -29,7 +29,7 @@ Utilize Visual Studio Code ou um editor de código equivalente.
 
 * Instale as dependências do projeto usando o gerenciador de pacotes Node.js.
 
-**Execute o comando**
+**Execute os comandos**
 
   `npm install`
 
