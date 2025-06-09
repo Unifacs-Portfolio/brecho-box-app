@@ -83,7 +83,7 @@ export default function ModificarDados({ navigation, route }) {
         setFetching(false);
       }
     };
-    
+
     loadUserData();
   }, []);
 
