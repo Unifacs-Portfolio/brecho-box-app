@@ -1,5 +1,5 @@
 # Projeto Mobile BrechóBox🕶️
-## Projeto da Unifacs - Consumo Sustentavel 🌱
+## Projeto da Unifacs - Consumo Sustentável 🌱
 
 **Responsáveis pelo Mobile:**
 -----------------------
