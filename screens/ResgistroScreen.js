@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import logoApp from '../assets/icon.jpg';
+import logoApp from '../assets/icon.png';
 import api from '../src/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

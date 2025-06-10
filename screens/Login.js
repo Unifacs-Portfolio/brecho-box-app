@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import logoApp from '../assets/icon.jpg';
+import logoApp from '../assets/icon.png';
 import api from '../src/services/api';
 
 export default function Login({ navigation }) {

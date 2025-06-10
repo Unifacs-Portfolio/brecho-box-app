@@ -1,4 +1,4 @@
-package com.exemplo
+package com.roannl.brechobox
 
 import android.app.Application
 import android.content.res.Configuration
