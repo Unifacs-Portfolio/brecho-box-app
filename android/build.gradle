@@ -5,9 +5,10 @@ buildscript {
         minSdkVersion = 23
         compileSdkVersion = 34
         targetSdkVersion = 34
-        kotlinVersion = "1.9.23"
+        kotlinVersion = "1.9.23" 
         ndkVersion = "26.1.10909125"
         gradlePluginVersion = "8.3.0"
+        reactNativeGradlePluginVersion = "+" 
     }
     repositories {
         google()
@@ -15,7 +16,7 @@ buildscript {
     }
     dependencies {
         classpath("com.android.tools.build:gradle:${gradlePluginVersion}")
-        classpath("com.facebook.react:react-native-gradle-plugin:0.74.1")
+        classpath("com.facebook.react:react-native-gradle-plugin:${reactNativeGradlePluginVersion}")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
     }
 }
@@ -45,6 +46,12 @@ if (safeExtGet('expoUpdatesUrl', null) != null) {
 }
 
 allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+            force "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+        }
+    }
     repositories {
         maven {
             url("${rootDir}/../node_modules/react-native/android")
