@@ -11,7 +11,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.1.0",
-    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",
     "@rneui/base": "^0.0.0-edge.2",
@@ -19,16 +19,17 @@
     "axios": "^1.9.0",
     "eas-cli": "^16.9.0",
     "expo": "^53.0.11",
-    "expo-modules-core": "^1.0.0",
     "expo-file-system": "~18.1.10",
     "expo-font": "~13.3.1",
     "expo-image-picker": "~16.1.4",
-    "expo-splash-screen": "^0.30.9",
+    "expo-modules-core": "~2.4.0",
+    "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",
+    "expo-updates": "^0.28.14",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.53.0",
-    "react-native": "^0.79.3",
+    "react-native": "0.79.3",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-image-header-scroll-view": "^1.0.0",
     "react-native-image-picker": "^8.2.1",
@@ -37,8 +38,7 @@
     "react-native-screens": "~4.11.1",
     "react-native-super-grid": "^6.0.1",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-web": "^0.20.0",
-    "expo-updates": "~0.28.14"
+    "react-native-web": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0"

@@ -1,5 +1,4 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
+// Top-level build file
 buildscript {
     ext {
         buildToolsVersion = "34.0.0"
@@ -18,11 +17,32 @@ buildscript {
         classpath("com.android.tools.build:gradle:${gradlePluginVersion}")
         classpath("com.facebook.react:react-native-gradle-plugin:0.74.1")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
-        classpath("org.jetbrains.kotlin:kotlin-serialization:${kotlinVersion}")
     }
 }
 
-apply plugin: "com.facebook.react.rootproject"
+// Nova implementação segura para subprojects
+def configureAndroidProject(project) {
+    project.android {
+        compileSdk rootProject.ext.compileSdkVersion
+        buildToolsVersion rootProject.ext.buildToolsVersion
+        ndkVersion rootProject.ext.ndkVersion
+        
+        defaultConfig {
+            minSdk rootProject.ext.minSdkVersion
+            targetSdk rootProject.ext.targetSdkVersion
+        }
+    }
+}
+
+// Configuração segura para expo-updates
+def safeExtGet(prop, fallback) {
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
+// Aplicação condicional do plugin
+if (safeExtGet('expoUpdatesUrl', null) != null) {
+    apply plugin: 'expo-updates-gradle-plugin'
+}
 
 allprojects {
     repositories {
@@ -32,23 +52,16 @@ allprojects {
         maven {
             url("${rootDir}/../node_modules/jsc-android/dist")
         }
-        maven {
-            url("${rootDir}/../node_modules/detox/Detox-android")
-        }
         google()
         mavenCentral()
         maven { url 'https://www.jitpack.io' }
     }
-}
-
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty("android")) {
-            android {
-                compileSdkVersion rootProject.ext.compileSdkVersion
-                buildToolsVersion rootProject.ext.buildToolsVersion
-                ndkVersion rootProject.ext.ndkVersion
-            }
-        }
+    
+    // Configuração otimizada para projetos Android
+    pluginManager.withPlugin('android') {
+        configureAndroidProject(it)
+    }
+    pluginManager.withPlugin('android-library') {
+        configureAndroidProject(it)
     }
 }
