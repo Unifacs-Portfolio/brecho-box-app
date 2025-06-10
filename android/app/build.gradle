@@ -85,9 +85,9 @@ android {
     ndkVersion rootProject.ext.ndkVersion
 
     buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk rootProject.ext.compileSdkVersion 
+    compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.brechobox"
+    namespace "com.roannl.brechobox"
     defaultConfig {
         applicationId 'com.roannl.brechobox'
         minSdkVersion rootProject.ext.minSdkVersion
@@ -150,8 +150,6 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.23"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";

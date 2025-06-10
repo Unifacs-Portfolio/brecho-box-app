@@ -1,4 +1,6 @@
 package com.roannl.brechobox
+
+import com.roannl.brechobox.BuildConfig
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

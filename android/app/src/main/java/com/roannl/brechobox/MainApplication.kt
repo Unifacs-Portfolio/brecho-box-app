@@ -1,5 +1,6 @@
 package com.roannl.brechobox
 
+import com.roannl.brechobox.BuildConfig
 import android.app.Application
 import android.content.res.Configuration
 
