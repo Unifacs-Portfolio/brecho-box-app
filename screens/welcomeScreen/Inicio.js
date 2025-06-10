@@ -6,7 +6,7 @@ export default function Inicio({ navigation }) {
     <View style={styles.container}>
       <View style={styles.topCurve}>
         <Image
-          source={require('../../assets/icon.png')} 
+          source={require('../../assets/icon.jpeg')} 
           style={styles.logo}
           resizeMode="contain"
         />

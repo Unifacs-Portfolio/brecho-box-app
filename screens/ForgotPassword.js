@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import logoApp from '../assets/icon.png';
+import logoApp from '../assets/icon.jpeg';
 import api from '../src/services/api';
 
 export default function ForgotPassword({ navigation }) {

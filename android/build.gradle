@@ -1,74 +1,58 @@
-// Top-level build file
 buildscript {
+    ext.kotlin_version = '2.0.21'
     ext {
         buildToolsVersion = "34.0.0"
-        minSdkVersion = 23
-        compileSdkVersion = 34
-        targetSdkVersion = 34
-        kotlinVersion = "1.9.0" 
+        minSdkVersion = 24
+        compileSdkVersion = 35
+        targetSdkVersion = 35
         ndkVersion = "26.1.10909125"
-        gradlePluginVersion = "8.3.0"
-        reactNativeGradlePluginVersion = "0.74.1" 
+        kotlinVersion = '2.0.21'
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:${gradlePluginVersion}")
-        classpath("com.facebook.react:react-native-gradle-plugin:${reactNativeGradlePluginVersion}")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+         classpath("com.android.tools.build:gradle:8.4.0")
+        classpath("com.facebook.react:react-native-gradle-plugin:0.74.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
     }
 }
 
-// Nova implementação segura para subprojects
-def configureAndroidProject(project) {
-    project.android {
-        compileSdk rootProject.ext.compileSdkVersion
-        buildToolsVersion rootProject.ext.buildToolsVersion
-        ndkVersion rootProject.ext.ndkVersion
-        
-        defaultConfig {
-            minSdk rootProject.ext.minSdkVersion
-            targetSdk rootProject.ext.targetSdkVersion
-        }
-    }
-}
-
-// Configuração segura para expo-updates
-def safeExtGet(prop, fallback) {
-    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
-}
-
-// Aplicação condicional do plugin
-if (safeExtGet('expoUpdatesUrl', null) != null) {
-    apply plugin: 'expo-updates-gradle-plugin'
-}
-
-allprojects {
+  allprojects {
     configurations.all {
         resolutionStrategy {
-            force "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-            force "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+            force "org.jetbrains.kotlin:kotlin-stdlib:1.9.23"
+            force "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
+            force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23"
         }
     }
+}
     repositories {
         maven {
-            url("${rootDir}/../node_modules/react-native/android")
+            url("$rootDir/../node_modules/react-native/android")
         }
         maven {
-            url("${rootDir}/../node_modules/jsc-android/dist")
+            url("$rootDir/../node_modules/jsc-android/dist")
         }
         google()
         mavenCentral()
         maven { url 'https://www.jitpack.io' }
     }
-    
-    // Configuração otimizada para projetos Android
-    pluginManager.withPlugin('android') {
-        configureAndroidProject(it)
-    }
-    pluginManager.withPlugin('android-library') {
-        configureAndroidProject(it)
+
+    subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            android {
+                compileSdkVersion rootProject.ext.compileSdkVersion
+                buildToolsVersion rootProject.ext.buildToolsVersion
+                ndkVersion rootProject.ext.ndkVersion
+            }
+        }
+        
+        // Injeta o projeto nos plugins problemáticos
+        if (project.name.contains('gradle-plugin')) {
+            project.extensions.extraProperties.set('project', project)
+        }
     }
 }
