@@ -5,10 +5,10 @@ buildscript {
         minSdkVersion = 23
         compileSdkVersion = 34
         targetSdkVersion = 34
-        kotlinVersion = "1.9.23" 
+        kotlinVersion = "1.9.0" 
         ndkVersion = "26.1.10909125"
         gradlePluginVersion = "8.3.0"
-        reactNativeGradlePluginVersion = "+" 
+        reactNativeGradlePluginVersion = "0.74.1" 
     }
     repositories {
         google()
