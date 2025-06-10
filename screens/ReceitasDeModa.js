@@ -23,16 +23,46 @@ export default function ReceitasDeModa({ navigation }) {
     try {
       setLoading(true);
       const response = await api.get('/api/Moda/receitas');
-      
-      // Verifica se a resposta tem a estrutura esperada
-      if (response.data && Array.isArray(response.data.dadosCru)) {
+
+      if (response.data && Array.isArray(response.data.dadosCru) && response.data.dadosCru.length > 0) {
         setReceitas(response.data.dadosCru);
       } else {
-        throw new Error('Estrutura de dados inesperada');
+        throw new Error('Nenhum dado retornado ou estrutura inválida');
       }
     } catch (error) {
       console.error('Erro ao buscar receitas:', error);
-      Alert.alert('Erro', 'Não foi possível carregar as receitas');
+      Alert.alert('Aviso', 'Carregando receitas padrão por falta de dados na API.');
+
+      // Mock de dados
+      setReceitas([
+        {
+          id: '1',
+          titulo: 'Look Casual com Jeans e Camiseta Branca',
+          descricao: 'Combine uma calça jeans de cintura alta com uma camiseta branca básica...',
+          foto: 'https://via.placeholder.com/300x200.png?text=Look+Casual',
+          dica: 'Ideal para passeios de fim de semana.',
+          estacao: 'Primavera/Verão',
+          materiais: 'Algodão, Jeans, Couro ecológico',
+        },
+        {
+          id: '2',
+          titulo: 'Estilo Office com Toque Fashion',
+          descricao: 'Use uma calça alfaiataria com uma blusa de seda...',
+          foto: 'https://via.placeholder.com/300x200.png?text=Estilo+Office',
+          dica: 'Perfeito para reuniões e eventos formais.',
+          estacao: 'Outono/Inverno',
+          materiais: 'Seda, Lã, Couro',
+        },
+        {
+          id: '3',
+          titulo: 'Receita de look sustentável',
+          descricao: 'Reaproveite peças vintage, como jaquetas jeans antigas...',
+          foto: 'https://via.placeholder.com/300x200.png?text=Look+Sustentável',
+          dica: 'Aposte em brechós e customizações.',
+          estacao: 'Ano todo',
+          materiais: 'Peças recicladas, Algodão orgânico',
+        },
+      ]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -43,7 +73,6 @@ export default function ReceitasDeModa({ navigation }) {
     fetchReceitas();
   }, []);
 
-  // Função para atualizar as receitas
   const handleRefresh = () => {
     setRefreshing(true);
     fetchReceitas();
@@ -53,7 +82,6 @@ export default function ReceitasDeModa({ navigation }) {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  // Função para formatar a data
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -71,7 +99,7 @@ export default function ReceitasDeModa({ navigation }) {
       {loading ? (
         <ActivityIndicator size="large" color="#fff" style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
@@ -103,34 +131,28 @@ export default function ReceitasDeModa({ navigation }) {
 
                   {isExpanded && (
                     <View style={styles.expandedContent}>
-                      {item.image_source && (
+                      {item.foto && (
                         <Image
-                          source={{ uri: item.image_source }}
+                          source={{ uri: item.foto }}
                           style={styles.image}
                           resizeMode="cover"
                         />
                       )}
-                      <Text style={styles.description}>{item.conteudo}</Text>
-                      
+                      <Text style={styles.description}>{item.descricao}</Text>
+
                       <View style={styles.infoContainer}>
                         <Text style={styles.info}>
-                          <Text style={styles.label}>Autor: </Text>
-                          {item.usuario?.nome || 'Anônimo'}
+                          <Text style={styles.label}>Dica: </Text>
+                          {item.dica || 'Sem dica'}
                         </Text>
                         <Text style={styles.info}>
-                          <Text style={styles.label}>Criado em: </Text>
-                          {formatDate(item.data_criacao)}
+                          <Text style={styles.label}>Estação: </Text>
+                          {item.estacao || 'Não especificada'}
                         </Text>
                         <Text style={styles.info}>
-                          <Text style={styles.label}>Verificado: </Text>
-                          {item.is_verify ? 'Sim' : 'Não'}
+                          <Text style={styles.label}>Materiais: </Text>
+                          {item.materiais || 'Desconhecidos'}
                         </Text>
-                        {item.subtemas && item.subtemas.length > 0 && (
-                          <Text style={styles.info}>
-                            <Text style={styles.label}>Subtemas: </Text>
-                            {item.subtemas.join(', ')}
-                          </Text>
-                        )}
                       </View>
                     </View>
                   )}
