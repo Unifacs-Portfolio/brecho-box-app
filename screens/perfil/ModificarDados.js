@@ -90,7 +90,7 @@ export default function ModificarDados({ navigation, route }) {
   
 
   const salvarAlteracoes = async () => {
-    if (loading) {
+    if (loading) return;
 
     await AsyncStorage.setItem(`@userData:${userEmail}`, JSON.stringify({ nome }));
     
@@ -254,7 +254,7 @@ export default function ModificarDados({ navigation, route }) {
     </View>
   );
 }
-}
+
 
 const primaryColor = '#464193';
 
