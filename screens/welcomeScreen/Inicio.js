@@ -1,5 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Image,
+  Dimensions  
+} from 'react-native';
+
+
+const { height } = Dimensions.get('window');
 
 export default function Inicio({ navigation }) {
   return (
@@ -69,33 +79,34 @@ const styles = StyleSheet.create({
   },
 
   outlinedButton: {
-    width: '80%',
-    paddingVertical: 14,
-    borderRadius: 10,
     borderColor: primaryColor,
     borderWidth: 2,
-    marginBottom: 20,
+    paddingVertical: height * 0.02,
+    borderRadius: 12,
     alignItems: 'center',
+    marginBottom: 15,
+    width: '80%',
   },
 
   outlinedButtonText: {
     color: primaryColor,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
 
   filledButton: {
-    width: '80%',
-    paddingVertical: 14,
-    borderRadius: 10,
     backgroundColor: primaryColor,
+    paddingVertical: height * 0.02,
+    borderRadius: 12,
     alignItems: 'center',
+    marginBottom: 15,
+    width: '80%',
   },
 
   filledButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
 
   title: {

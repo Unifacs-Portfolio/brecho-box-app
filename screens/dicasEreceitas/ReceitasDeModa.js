@@ -6,32 +6,63 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  RefreshControl,
-  Alert
+  Image,
+  Alert,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../src/services/api';
+import api from '../../src/services/api';
 
-export default function DicasDeModa({ navigation }) {
-  const [dicas, setDicas] = useState([]);
+export default function ReceitasDeModa({ navigation }) {
+  const [receitas, setReceitas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchDicas = async () => {
+  const fetchReceitas = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/Moda/dicas');
-      
-      // Verifica se a resposta tem a estrutura esperada
-      if (response.data && Array.isArray(response.data)) {
-        setDicas(response.data);
+      const response = await api.get('/api/Moda/receitas');
+
+      if (response.data && Array.isArray(response.data.dadosCru) && response.data.dadosCru.length > 0) {
+        setReceitas(response.data.dadosCru);
       } else {
-        throw new Error('Estrutura de dados inesperada');
+        throw new Error('Nenhum dado retornado ou estrutura inválida');
       }
     } catch (error) {
-      console.error('Erro ao buscar dicas:', error);
-      Alert.alert('Erro', 'Não foi possível carregar as dicas');
+      console.error('Erro ao buscar receitas:', error);
+      Alert.alert('Aviso', 'Carregando receitas padrão por falta de dados na API.');
+
+      // Mock de dados
+      setReceitas([
+        {
+          id: '1',
+          titulo: 'Look Casual com Jeans e Camiseta Branca',
+          descricao: 'Combine uma calça jeans de cintura alta com uma camiseta branca básica...',
+          foto: 'https://blog.cea.com.br/wp-content/uploads/2024/03/1-3_calca-jeans-super-wide-leg-azul.jpg',
+          dica: 'Ideal para passeios de fim de semana.',
+          estacao: 'Primavera/Verão',
+          materiais: 'Algodão, Jeans, Couro ecológico',
+        },
+        {
+          id: '2',
+          titulo: 'Estilo Office com Toque Fashion',
+          descricao: 'Use uma calça alfaiataria com uma blusa de seda...',
+          foto: 'https://endutex.com.br/wp-content/uploads/2023/07/endutex_noticia_site_junho_4.jpg',
+          dica: 'Perfeito para reuniões e eventos formais.',
+          estacao: 'Outono/Inverno',
+          materiais: 'Seda, Lã, Couro',
+        },
+        {
+          id: '3',
+          titulo: 'Receita de look sustentável',
+          descricao: 'Reaproveite peças vintage, como jaquetas jeans antigas...',
+          foto: 'https://admin.cnnbrasil.com.br/wp-content/uploads/sites/12/2023/03/qual-o-conceito-de-moda-sustentavel.jpg',
+          dica: 'Aposte em brechós e customizações.',
+          estacao: 'Ano todo',
+          materiais: 'Peças recicladas, Algodão orgânico',
+        },
+      ]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -39,19 +70,18 @@ export default function DicasDeModa({ navigation }) {
   };
 
   useEffect(() => {
-    fetchDicas();
+    fetchReceitas();
   }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchDicas();
+    fetchReceitas();
   };
 
   const toggleExpand = (id) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  // Função para formatar a data
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -64,12 +94,12 @@ export default function DicasDeModa({ navigation }) {
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <Text style={styles.header}>Dicas de Moda</Text>
+      <Text style={styles.header}>Receitas de Moda</Text>
 
       {loading ? (
         <ActivityIndicator size="large" color="#fff" style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
@@ -80,8 +110,8 @@ export default function DicasDeModa({ navigation }) {
             />
           }
         >
-          {dicas.length > 0 ? (
-            dicas.map((item) => {
+          {receitas.length > 0 ? (
+            receitas.map((item) => {
               const isExpanded = expandedId === item.id;
               return (
                 <TouchableOpacity
@@ -101,24 +131,28 @@ export default function DicasDeModa({ navigation }) {
 
                   {isExpanded && (
                     <View style={styles.expandedContent}>
-                      <Text style={styles.description}>{item.conteudo}</Text>
-                      
+                      {item.foto && (
+                        <Image
+                          source={{ uri: item.foto }}
+                          style={styles.image}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <Text style={styles.description}>{item.descricao}</Text>
+
                       <View style={styles.infoContainer}>
                         <Text style={styles.info}>
-                          <Text style={styles.label}>Autor: </Text>
-                          {item.idUsuario || 'Anônimo'}
+                          <Text style={styles.label}>Dica: </Text>
+                          {item.dica || 'Sem dica'}
                         </Text>
                         <Text style={styles.info}>
-                          <Text style={styles.label}>Criado em: </Text>
-                          {formatDate(item.dataCriacao)}
+                          <Text style={styles.label}>Estação: </Text>
+                          {item.estacao || 'Não especificada'}
                         </Text>
                         <Text style={styles.info}>
-                          <Text style={styles.label}>Verificado: </Text>
-                          {item.isVerify ? 'Sim' : 'Não'}
+                          <Text style={styles.label}>Materiais: </Text>
+                          {item.materiais || 'Desconhecidos'}
                         </Text>
-                        {item.isCreatedBySpecialist && (
-                          <Text style={styles.specialistBadge}>Dica de especialista</Text>
-                        )}
                       </View>
                     </View>
                   )}
@@ -126,7 +160,7 @@ export default function DicasDeModa({ navigation }) {
               );
             })
           ) : (
-            <Text style={styles.emptyMessage}>Nenhuma dica encontrada</Text>
+            <Text style={styles.emptyMessage}>Nenhuma receita encontrada</Text>
           )}
         </ScrollView>
       )}
@@ -181,6 +215,12 @@ const styles = StyleSheet.create({
   expandedContent: {
     marginTop: 10,
   },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
   description: {
     fontSize: 14,
     color: '#555',
@@ -204,14 +244,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
-  },
-  specialistBadge: {
-    backgroundColor: '#464193',
-    color: '#fff',
-    padding: 4,
-    borderRadius: 4,
-    fontSize: 12,
-    alignSelf: 'flex-start',
-    marginTop: 6,
   },
 });

@@ -7,7 +7,9 @@ import {
   Text,
   Alert,
   ActivityIndicator,
-  AppState
+  AppState,
+  Dimensions,
+  ScrollView
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,23 +25,55 @@ import arvore2 from '../../assets/IconsLevel/arvore2.png';
 import arvore3 from '../../assets/IconsLevel/arvore3.png';
 import arvore4 from '../../assets/IconsLevel/arvore4.png';
 
+const { width, height } = Dimensions.get('window');
+
 export default function Perfil() {
   const navigation = useNavigation();
-  const [userImage, setUserImage] = useState(null); 
+  const [userImage, setUserImage] = useState(null);
   const [quizScore, setQuizScore] = useState(0);
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentEmail, setCurrentEmail] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   // Mapeamento dos ícones baseados na pontuação
   const treeIcons = [
-    arvore0,   // 0 acertos
-    arvore1,   // 1 acerto
-    arvore2,   // 2 acertos
-    arvore3,   // 3 acertos
-    arvore4,   // 4 acertos
-    arvore4    // 5 acertos
+    arvore0,    // 0 acertos
+    arvore1,    // 1 acerto
+    arvore2,    // 2 acertos
+    arvore3,    // 3 acertos
+    arvore4,    // 4 acertos
+    arvore4     // 5 acertos (ou mais)
   ];
+
+  // Mapeamento dos títulos baseados na pontuação
+  const scoreTitles = [
+    "Semente da Consciência",
+    "Brotinho Sustentável",
+    "Folha Verde",
+    "Raiz Forte",
+    "Árvore Florescendo",
+    "Consumidor Consciente"
+  ];
+
+  // Mapeamento dos estilos de badge para cada título de nível
+  const scoreTitleStyles = [
+    { backgroundColor: '#e0e0e0', color: '#555555' }, // 0 pontos
+    { backgroundColor: '#d4edda', color: '#28a745' }, // 1 ponto
+    { backgroundColor: '#90EE90', color: '#1a5c2f' }, // 2 pontos
+    { backgroundColor: '#B0E0E6', color: '#4682B4' }, // 3 pontos (um azul mais roxeado)
+    { backgroundColor: '#8A2BE2', color: '#FFFFFF' }, // 4 pontos (roxo vibrante)
+    { backgroundColor: '#464193', color: '#FFFFFF' }  // 5 pontos (roxo principal)
+  ];
+
+  // Função para obter o título do nível e o estilo correspondente
+  const getScoreInfo = (score) => {
+    const index = Math.min(score, scoreTitles.length - 1);
+    return {
+      title: scoreTitles[index],
+      style: scoreTitleStyles[index]
+    };
+  };
 
   // Função para carregar a imagem padrão
   const loadDefaultImage = () => {
@@ -51,17 +85,14 @@ export default function Perfil() {
     try {
       const savedImage = await AsyncStorage.getItem(`@userImage_${email}`);
       if (savedImage) {
-        // Verifica se a imagem ainda existe no sistema de arquivos
         const fileInfo = await FileSystem.getInfoAsync(savedImage);
         if (fileInfo.exists) {
           setUserImage({ uri: savedImage });
         } else {
-          // Se a imagem não existir mais, carrega a padrão
           setUserImage(loadDefaultImage());
           await AsyncStorage.removeItem(`@userImage_${email}`);
         }
       } else {
-        // Se não houver imagem salva, carrega a padrão
         setUserImage(loadDefaultImage());
       }
     } catch (error) {
@@ -75,17 +106,15 @@ export default function Perfil() {
     try {
       setLoading(true);
       const email = await AsyncStorage.getItem('@currentUserEmail');
-      
+
       if (!email) {
         throw new Error('Nenhum email encontrado');
       }
 
       setCurrentEmail(email);
-      
-      // Carrega a imagem do usuário
+
       await loadSavedImage(email);
 
-      // Restante do código para carregar nome e pontuação...
       const userData = await AsyncStorage.getItem(`@userData:${email}`);
       if (userData) {
         const parsedData = JSON.parse(userData);
@@ -97,9 +126,10 @@ export default function Perfil() {
       const score = await AsyncStorage.getItem('@quizScore');
       if (score !== null) {
         setQuizScore(parseInt(score));
+      } else {
+        setQuizScore(0);
       }
 
-      // Busca dados adicionais da API se necessário
       const response = await api.get('/api/usuario');
       if (response.data?.usuario?.nome && !userName) {
         setUserName(response.data.usuario.nome);
@@ -112,6 +142,7 @@ export default function Perfil() {
       console.error('Erro ao buscar dados do usuário:', error);
       Alert.alert('Erro', 'Não foi possível carregar os dados do perfil');
       setUserImage(loadDefaultImage());
+      setQuizScore(0);
     } finally {
       setLoading(false);
     }
@@ -152,46 +183,59 @@ export default function Perfil() {
 
   useEffect(() => {
     const loadData = async () => {
-        try {
-            const email = await AsyncStorage.getItem('@currentUserEmail');
-            if (email) {
-                await loadSavedImage(email);
-                // Carrega outros dados do usuário...
+      try {
+        const email = await AsyncStorage.getItem('@currentUserEmail');
+        if (email) {
+          await loadSavedImage(email);
+          const score = await AsyncStorage.getItem('@quizScore');
+          if (score !== null) {
+            setQuizScore(parseInt(score));
+          } else {
+            setQuizScore(0);
+          }
+          const userData = await AsyncStorage.getItem(`@userData:${email}`);
+          if (userData) {
+            const parsedData = JSON.parse(userData);
+            if (parsedData.nome) {
+              setUserName(parsedData.nome);
             }
-        } catch (error) {
-            console.error('Erro ao carregar dados:', error);
+          }
         }
+      } catch (error) {
+        console.error('Erro ao carregar dados em loadData:', error);
+      }
     };
 
-    // Carrega os dados do usuário quando o componente monta
     fetchUserData();
-
-    // Carrega quando o componente monta
-    loadData();
-
-    // Adiciona listener para quando o app voltar do background
     const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
-        if (nextAppState === 'active') {
-            loadData();
-        }
+      if (nextAppState === 'active') {
+        loadData();
+      }
     });
 
     return () => {
-        appStateSubscription.remove();
+      appStateSubscription.remove();
     };
-}, []);
+  }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchUserData();
+  };
 
 
-if (loading) {
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f2' }}>
+        <ActivityIndicator size="large" color={primaryColor} />
+      </View>
+    );
+  }
+
+  const { title: currentScoreTitle, style: currentScoreTitleStyle } = getScoreInfo(quizScore);
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color={primaryColor} />
-    </View>
-  );
-}
-
-  return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <View style={styles.topCurve}>
         <TouchableOpacity
           style={styles.backButton}
@@ -200,78 +244,99 @@ if (loading) {
           <Ionicons name="arrow-back" size={24} color={'#fff'} />
         </TouchableOpacity>
 
-        <View style={styles.container}>
-          <Text style={styles.title}>Perfil</Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+        >
+          <Ionicons name="refresh" size={24} color={'#fff'} />
+        </TouchableOpacity>
+        <View style={styles.profileContent}>
+          <Text style={styles.headerTitle}>Perfil</Text>
+        
           <TouchableOpacity onPress={pickImage}>
-            <View style={styles.profileContainer}>
+            <View style={styles.profileImageContainer}>
               <Image
                 source={userImage}
                 style={styles.mainImage}
               />
               <View style={styles.overlayIconContainer}>
                 <Image
-                  source={treeIcons[Math.min(quizScore, 5)]}
+                  source={treeIcons[Math.min(quizScore, treeIcons.length - 1)]}
                   style={styles.overlayIcon}
                 />
               </View>
             </View>
           </TouchableOpacity>
+          {userName ? (
+            <Text style={styles.userName}>{userName}</Text>
+          ) : (
+            <Text style={styles.userName}>Usuário BrechóBox</Text>
+          )}
 
-          <Text style={styles.userName}>{userName}</Text>
         </View>
       </View>
 
       <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => navigation.navigate('Modificacoes')}
-        >
-          <Text style={styles.editButtonText}>Configurações</Text>
-        </TouchableOpacity>
+        <Text style={[styles.scoreTitleBadge, currentScoreTitleStyle]}>{currentScoreTitle}</Text>
       </View>
     </View>
+
+    
   );
 }
+
 
 const primaryColor = '#464193';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#f2f2f2',
   },
   topCurve: {
     backgroundColor: '#473da1',
-    height: '70%',
-    borderBottomLeftRadius: 200,
-    borderBottomRightRadius: 200,
+    height: height * 0.7,
+    borderBottomLeftRadius: width * 0.5,
+    borderBottomRightRadius: width * 0.5,
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: height * 0.08,
   },
   backButton: {
     position: 'absolute',
-    top: 50,
+    top: height * 0.05,
     left: 20,
     padding: 10,
+    backgroundColor: '#ffffff44',
+    borderRadius: 10,
   },
-  profileContainer: {
+  profileContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: width * 0.08,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: height * 0.03,
+  },
+  profileImageContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   mainImage: {
-    width: 250,
-    height: 250,
+    width: width * 0.6,
+    height: width * 0.6,
     resizeMode: 'cover',
     borderWidth: 4,
     borderColor: '#4B0082',
-    borderRadius: 20,
+    borderRadius: width * 0.1,
   },
   overlayIconContainer: {
     position: 'absolute',
-    right: 15,
-    bottom: 6,
+    right: width * 0.02,
+    bottom: height * 0.005,
     backgroundColor: '#fff',
     borderRadius: 25,
     padding: 5,
@@ -279,39 +344,45 @@ const styles = StyleSheet.create({
     borderColor: '#4B0082',
   },
   overlayIcon: {
-    width: 50,
-    height: 50,
+    width: width * 0.13,
+    height: width * 0.13,
     resizeMode: 'contain',
   },
-  userName: {
-    marginTop: 30,
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#fff',
+  scoreTitleBadge: {
+    marginTop: height * 0.03,
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
     textAlign: 'center',
+    paddingVertical: height * 0.01,
+    paddingHorizontal: width * 0.04,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   bottomContainer: {
-    height: '30%',
+    height: height * 0.3,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f2f2f2',
+    paddingBottom: height * 0.14,
   },
-  editButton: {
-    backgroundColor: '#473da1',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-  },
-  editButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 30,
+  userName: {
+    fontSize: width * 0.06,
     fontWeight: 'bold',
     color: '#fff',
-    alignSelf: 'center',
-    marginBottom: 30,
+    textAlign: 'center',
+    marginBottom: height * 0.02,
+  },
+  settingsButtonFloating: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: primaryColor,
+    borderRadius: 30,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
