@@ -274,7 +274,8 @@ export default function Perfil() {
       </View>
 
       <View style={styles.bottomContainer}>
-        
+       <Text style={styles.quizTitle}>Realize o Quiz para saber seu Titulo!!</Text>
+
       <Text style={[styles.scoreTitleBadge, currentScoreTitleStyle]}>{currentScoreTitle}</Text>
 
         <TouchableOpacity
@@ -296,6 +297,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f2f2f2',
   },
+  quizTitle: {
+    color: primaryColor,
+    fontSize: width * 0.04,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+
   topCurve: {
     backgroundColor: '#473da1',
     height: height * 0.7,

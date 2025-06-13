@@ -1,135 +1,139 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
+  Alert,
   Dimensions,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../src/services/api'; 
+import api from '../../src/services/api'; // Ajuste o caminho conforme necessário
 
 const { width, height } = Dimensions.get('window');
 const primaryColor = '#464193';
+const dangerColor = '#D9534F'; // Cor para botão de exclusão
 
-export default function CreateDicaScreen({ navigation }) {
-  const [titulo, setTitulo] = useState('');
-  const [conteudo, setConteudo] = useState(''); // Mapeia para 'descricao' na API
-  const [loading, setLoading] = useState(false);
+export default function DicasDetalhesScreen({ route, navigation }) {
+  // Acesso seguro aos parâmetros de navegação
+  // Se route.params for undefined, tipId e tipTitle serão undefined
+  const { tipId, tipTitle } = route.params || {}; 
+  const [tip, setTip] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState(null);
   const [userToken, setUserToken] = useState(null);
-  const [userEmail, setUserEmail] = useState(null); // Para armazenar o email do usuário logado
 
- 
-
+  // Função para buscar o email e token do usuário logado
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const token = await AsyncStorage.getItem('userToken');
         const email = await AsyncStorage.getItem('@currentUserEmail');
+        const token = await AsyncStorage.getItem('userToken');
+        setUserEmail(email);
         setUserToken(token);
-        setUserEmail(email); 
       } catch (error) {
-        console.error('Erro ao buscar token ou email do usuário:', error);
+        console.error('Erro ao buscar email ou token do usuário:', error);
       }
     };
     fetchUserData();
   }, []);
 
-  const handleSubmitDica = async () => {
-    if (!userToken || !userEmail) { // Verifica se há token e email do usuário
-      Alert.alert('Erro', 'Você precisa estar logado para criar uma dica.');
-      navigation.navigate('Login'); // Redireciona para o login
-      return;
-    }
-
-    if (!titulo || !conteudo) {
-      Alert.alert('Erro', 'Por favor, preencha Título e Conteúdo da Dica.');
-      return;
-    }
-
+  // Função para buscar os detalhes completos da dica
+  const fetchTipDetails = useCallback(async () => {
     setLoading(true);
-
+    // Verifica se tipId existe antes de fazer a chamada à API
+    if (!tipId) {
+      console.warn('tipId não fornecido na rota. Não é possível buscar os detalhes da dica.');
+      Alert.alert('Erro', 'ID da dica não fornecido.');
+      setLoading(false);
+      navigation.goBack();
+      return;
+    }
     try {
-    
-
-      const response = await api.post('/api/dicas', {
-        titulo: titulo,
-        conteudo: conteudo,
-        tema: "Moda",
-        subtema: "subtema-moda-sustentavel",
-        usuarioId: userEmail,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (response.status === 201) {
-        Alert.alert('Sucesso', 'Dica criada com sucesso!');
-        navigation.goBack(); // Volta para a tela anterior
+      const response = await api.get(`/api/dicas/${tipId}`);
+      if (response.data) {
+        setTip(response.data.dica || response.data); 
       } else {
-        Alert.alert('Erro', response.data?.message || 'Erro ao criar dica.');
+        Alert.alert('Erro', 'Dica não encontrada.');
+        navigation.goBack();
       }
     } catch (error) {
-      console.error('Erro ao criar dica:', error.response?.data || error.message);
-      Alert.alert('Erro', error.response?.data?.message || 'Não foi possível criar a dica. Tente novamente.');
+      console.error('Erro ao buscar detalhes da dica:', error.response?.data || error.message);
+      Alert.alert('Erro', 'Não foi possível carregar os detalhes da dica.');
+      navigation.goBack();
     } finally {
       setLoading(false);
     }
-  };
+  }, [tipId, navigation]); 
+
+  // Chama a busca dos detalhes da dica ao carregar a tela e quando tipId muda
+  useEffect(() => {
+    if (tipId) { // Garante que temos um ID antes de buscar
+      fetchTipDetails();
+    }
+  }, [tipId, fetchTipDetails]);
+
+
+
+  if (loading) {
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color={primaryColor} />
+        <Text style={styles.loadingText}>Carregando dica...</Text>
+      </View>
+    );
+  }
+
+  if (!tip) {
+    return (
+      <View style={styles.centeredContainer}>
+        <Text style={styles.errorText}>Dica não encontrada ou erro ao carregar.</Text>
+        <TouchableOpacity style={styles.backButtonBottom} onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={28} color={primaryColor} />
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={primaryColor} />
-        </TouchableOpacity>
+        <Text style={styles.title}>{tip.titulo}</Text>
+        {tip.email && <Text style={styles.author}>Por: {tip.email}</Text>}
+        {tip.tema && <Text style={styles.infoText}>Tema: {tip.tema}</Text>}
+        {tip.subtemas && tip.subtemas.length > 0 && (
+          <Text style={styles.infoText}>Subtemas: {tip.subtemas.join(', ')}</Text>
+        )}
+        
+        <View style={styles.contentCard}>
+          <Text style={styles.content}>{tip.conteudo}</Text>
+        </View>
 
-        <Text style={styles.header}>Criar Nova Dica</Text>
-
-        <View style={styles.formCard}>
-          <TextInput
-            style={styles.input}
-            placeholder="Título da Dica"
-            placeholderTextColor="#aaa"
-            value={titulo}
-            onChangeText={setTitulo}
-            editable={!loading}
-          />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Conteúdo Detalhado da Dica"
-            placeholderTextColor="#aaa"
-            value={conteudo}
-            onChangeText={setConteudo}
-            multiline
-            numberOfLines={5}
-            editable={!loading}
-          />
-
+        {/* Botão de Excluir - Visível apenas se o usuário for o criador */}
+        {canDelete && (
           <TouchableOpacity
-            style={[styles.submitButton, loading && styles.disabledButton]}
-            onPress={handleSubmitDica}
+            style={[styles.deleteButton, loading && styles.disabledButton]}
+            onPress={handleDeleteTip}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>Publicar Dica</Text>
+              <Text style={styles.deleteButtonText}>Excluir Dica</Text>
             )}
           </TouchableOpacity>
-        </View>
+        )}
+
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -137,67 +141,108 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f2f2f2',
+    paddingTop: Platform.OS === 'ios' ? height * 0.06 : height * 0.03, // Ajuste para status bar
   },
-  scrollContent: {
-    flexGrow: 1,
+  centeredContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: width * 0.05,
-    paddingTop: height * 0.08,
+    backgroundColor: '#f2f2f2',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: width * 0.04,
+    color: primaryColor,
+  },
+  errorText: {
+    fontSize: width * 0.05,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   backButton: {
     position: 'absolute',
-    top: height * 0.05,
-    left: width * 0.05,
+    top: Platform.OS === 'ios' ? height * 0.05 : height * 0.03,
+    left: width * 0.03,
     padding: 10,
     zIndex: 1,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 20,
   },
-  header: {
+  backButtonBottom: {
+    backgroundColor: primaryColor,
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.08,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: width * 0.04,
+    fontWeight: 'bold',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: width * 0.05,
+    paddingBottom: height * 0.03,
+    alignItems: 'center',
+  },
+  title: {
     fontSize: width * 0.07,
     fontWeight: 'bold',
     color: primaryColor,
-    marginBottom: height * 0.03,
+    marginBottom: height * 0.01,
+    textAlign: 'center',
+    marginTop: height * 0.06, // Espaçamento para o botão de voltar
+  },
+  author: {
+    fontSize: width * 0.04,
+    color: '#666',
+    marginBottom: height * 0.01,
     textAlign: 'center',
   },
-  formCard: {
-    width: '100%',
+  infoText: {
+    fontSize: width * 0.038,
+    color: '#555',
+    marginBottom: height * 0.005,
+    textAlign: 'center',
+  },
+  contentCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 15,
     padding: width * 0.05,
+    marginTop: height * 0.02,
+    marginBottom: height * 0.03,
+    width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 3,
   },
-  input: {
-    width: '100%',
-    padding: height * 0.015,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: height * 0.02,
-    fontSize: width * 0.04,
+  content: {
+    fontSize: width * 0.042,
+    color: '#333',
+    lineHeight: width * 0.06,
+    textAlign: 'justify',
   },
-  textArea: {
-    height: height * 0.15,
-    textAlignVertical: 'top',
-  },
-  submitButton: {
-    backgroundColor: primaryColor,
-    paddingVertical: height * 0.02,
+  deleteButton: {
+    backgroundColor: dangerColor,
+    paddingVertical: height * 0.018,
+    paddingHorizontal: width * 0.06,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: height * 0.01,
+    marginTop: height * 0.02,
+    width: '80%',
+    alignSelf: 'center',
   },
-  disabledButton: {
-    backgroundColor: '#999',
-    opacity: 0.7,
-  },
-  submitButtonText: {
+  deleteButtonText: {
     color: '#fff',
     fontSize: width * 0.045,
     fontWeight: 'bold',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });

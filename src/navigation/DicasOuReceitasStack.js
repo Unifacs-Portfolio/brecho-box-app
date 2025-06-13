@@ -17,6 +17,7 @@ export default function DicasOuReceitasStack() {
       <Stack.Screen name="Receitas" component={ReceitasDeModa} options={{ headerShown: false }} />
       <Stack.Screen name="CreateReceitas" component={CreateReceitaScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CreateDicas" component={CreateDicaScreen} options={{ headerShown: false }} />
+
     </Stack.Navigator>
   );
 }

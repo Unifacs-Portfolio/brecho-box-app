@@ -19,13 +19,22 @@ const { width, height } = Dimensions.get('window');
 
 export default function Home() {
   const navigation = useNavigation();
-  const [userName, setUserName] = useState('Usuário');
+  const [userName, setUserName] = useState('Usuário'); 
   const [dailyTip, setDailyTip] = useState(null);
   const [dailyRecipe, setDailyRecipe] = useState(null);
   const [loadingDailyContent, setLoadingDailyContent] = useState(true);
   const [isTipExpanded, setIsTipExpanded] = useState(false);
   const [isRecipeExpanded, setIsRecipeExpanded] = useState(false);
   const [userProfileImage, setUserProfileImage] = useState(null);
+
+  // Regex para encontrar URLs do YouTube no texto do conteúdo
+  const youtubeUrlRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
+
+
+  // Função auxiliar para verificar se o título contém um número
+  const hasNumberInTitle = (item) => {
+    return item && item.titulo && /\d/.test(item.titulo);
+  };
 
   // Função para carregar a imagem de perfil do usuário
   const loadUserProfileImage = useCallback(async () => {
@@ -36,11 +45,9 @@ export default function Home() {
         if (savedImageUri) {
           setUserProfileImage({ uri: savedImageUri });
         } else {
-          // Se não houver imagem salva, use uma imagem padrão local
           setUserProfileImage(require('../assets/iconsLogin/carinhabranco.jpg'));
         }
       } else {
-        // Se não houver usuário logado, use uma imagem padrão
         setUserProfileImage(require('../assets/iconsLogin/carinhabranco.jpg'));
       }
     } catch (error) {
@@ -49,49 +56,53 @@ export default function Home() {
     }
   }, []);
 
-  // Função para buscar o nome do usuário
+  // Função para buscar o nome do usuário - ADICIONADO LOGS DE DEBUG
   const fetchUserName = useCallback(async () => {
+    console.log('--- Iniciando fetchUserName ---');
     try {
       const userEmail = await AsyncStorage.getItem('@currentUserEmail');
+      console.log('User Email from AsyncStorage:', userEmail);
+
       if (userEmail) {
         const storedData = await AsyncStorage.getItem(`@userData:${userEmail}`);
+        console.log('Stored Data for userEmail:', storedData);
+
         if (storedData) {
           const parsedData = JSON.parse(storedData);
+          console.log('Parsed User Data:', parsedData);
+
           if (parsedData.nome) {
             setUserName(parsedData.nome);
+            console.log('UserName set to:', parsedData.nome);
+          } else {
+            console.log('Nome não encontrado em parsedData.');
           }
+        } else {
+          console.log('Nenhum dado encontrado para este userEmail no AsyncStorage.');
         }
+      } else {
+        console.log('userEmail não encontrado no AsyncStorage.');
+        setUserName('Usuário'); // Garante que o nome padrão seja exibido se o email não for encontrado
       }
     } catch (error) {
       console.error('Erro ao buscar nome do usuário:', error);
+      setUserName('Usuário'); // Fallback em caso de erro
     }
+    console.log('--- Finalizando fetchUserName ---');
   }, []);
 
-  // Função para pegar um item aleatório de um array
-  const getRandomItem = (array) => {
-    if (!array || array.length === 0) return null;
-    const randomIndex = Math.floor(Math.random() * array.length);
-    return array[randomIndex];
-  };
-
-  // Função para extrair o ID do vídeo do YouTube e retornar a URL da thumbnail
-  const getYouTubeThumbnail = (youtubeUrl) => {
-    if (!youtubeUrl || typeof youtubeUrl !== 'string') {
-      console.log('getYouTubeThumbnail: URL de entrada inválida ou não é string.', youtubeUrl);
+  // Função para extrair o ID do vídeo do YouTube do conteúdo e retornar a URL da thumbnail
+  const getYouTubeThumbnail = (content) => {
+    if (!content || typeof content !== 'string') {
+      console.log('getYouTubeThumbnail: Conteúdo de entrada inválido ou não é string.', content);
       return null;
     }
-    const regExp = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/i;
-    const match = youtubeUrl.match(regExp);
-    const videoId = match && match[1] ? match[1] : null;
-    console.log('YouTube URL de entrada:', youtubeUrl);
-    console.log('ID de Vídeo Extraído:', videoId);
-
+    const match = content.match(youtubeUrlRegex);
+    const videoId = match && match[2] ? match[2] : null;
+    
     if (videoId) {
-      const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-      console.log('URL da Miniatura Gerada:', thumbnailUrl);
-      return thumbnailUrl;
+      return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     }
-    console.log('Nenhum ID de Vídeo válido encontrado na URL fornecida, retornando miniatura nula.');
     return null;
   };
 
@@ -100,112 +111,121 @@ export default function Home() {
     setLoadingDailyContent(true);
     const today = new Date().toISOString().slice(0, 10);
 
+    let tipToSet = null;
+    let recipeToSet = null;
+    let needsNewSelection = false;
+
+    const lastFetchDate = await AsyncStorage.getItem('@lastDailyContentFetchDate');
+    let savedDailyTipTitle = await AsyncStorage.getItem('@dailyTipTitle');
+    let savedDailyRecipeTitle = await AsyncStorage.getItem('@dailyRecipeTitle');
+
+
+    const oldTipId = await AsyncStorage.getItem('@dailyTipId');
+    const oldRecipeId = await AsyncStorage.getItem('@dailyRecipeId');
+    if (oldTipId || oldRecipeId) {
+        console.log('Detectando IDs antigos. Removendo-os...');
+        await AsyncStorage.removeItem('@dailyTipId');
+        await AsyncStorage.removeItem('@dailyRecipeId');
+    }
+
+    let allTipsFromApi = [];
+    let allRecipesFromApi = [];
+
     try {
-      const lastFetchDate = await AsyncStorage.getItem('@lastDailyContentFetchDate');
-      let savedDailyTipId = await AsyncStorage.getItem('@dailyTipId');
-      let savedDailyRecipeId = await AsyncStorage.getItem('@dailyRecipeId');
-
-      let tipToSet = null;
-      let recipeToSet = null;
-
-      // Tenta carregar conteúdo do dia se já foi salvo
-      if (lastFetchDate === today && savedDailyTipId && savedDailyRecipeId) {
-        console.log('Conteúdo diário já salvo para hoje. Tentando carregar...');
-
-        try {
-          const tipResponse = await api.get(`/api/dicas/${savedDailyTipId}`);
-          if (tipResponse && tipResponse.data) {
-            tipToSet = tipResponse.data;
-            console.log('Dica salva carregada:', tipToSet.titulo);
-          } else {
-            console.warn('Dica salva não encontrada ou falha ao carregar (dados ausentes na resposta da API). Buscando nova.');
-            savedDailyTipId = null;
-          }
-        } catch (err) {
-          console.error('Erro ao buscar dica salva por ID:', savedDailyTipId, 'Erro:', err.response?.data || err.message);
-          savedDailyTipId = null;
-        }
-
-        try {
-          const recipeResponse = await api.get(`/api/receitas/${savedDailyRecipeId}`);
-          if (recipeResponse && recipeResponse.data) {
-            const fetchedRecipe = recipeResponse.data.receita || recipeResponse.data; 
-            if (fetchedRecipe && fetchedRecipe.fotos && fetchedRecipe.fotos.length > 0 && typeof fetchedRecipe.fotos[0] === 'string') {
-              recipeToSet = fetchedRecipe;
-              console.log('Receita salva carregada:', recipeToSet.titulo);
-            } else {
-              console.warn('Receita salva encontrada, mas sem URL de foto/vídeo válida. Buscando nova.');
-              recipeToSet = null; // Força nova busca
-              savedDailyRecipeId = null;
-            }
-          } else {
-            console.warn('Receita salva não encontrada ou falha ao carregar (dados ausentes na resposta da API). Buscando nova.');
-            savedDailyRecipeId = null;
-          }
-        } catch (err) {
-          console.error('Erro ao buscar receita salva por ID:', savedDailyRecipeId, 'Erro:', err.response?.data || err.message);
-          savedDailyRecipeId = null;
-        }
-      }
-
-      // Se não há conteúdo salvo para hoje ou falhou ao carregar, busca novo
-      if (lastFetchDate !== today || !tipToSet || !recipeToSet) {
-        console.log('Buscando novo conteúdo diário...');
         const [tipsResponse, recipesResponse] = await Promise.all([
-          api.get('/api/Moda/dicas').catch(err => { console.error('Erro ao buscar todas as dicas:', err); return null; }),
-          api.get('/api/Moda/receitas').catch(err => { console.error('Erro ao buscar todas as receitas:', err); return null; }),
+            api.get('/api/Moda/dicas').catch(err => { console.error('Erro ao buscar todas as dicas:', err); return null; }),
+            api.get('/api/Moda/receitas').catch(err => { console.error('Erro ao buscar todas as receitas:', err); return null; }),
         ]);
 
-        const allTips = tipsResponse?.data || [];
-        let allRecipes = (recipesResponse?.data && recipesResponse.data.receitas) ? recipesResponse.data.receitas : (recipesResponse?.data || []);
-        allRecipes = allRecipes.filter(recipe => 
-          recipe.fotos && recipe.fotos.length > 0 && typeof recipe.fotos[0] === 'string'
+        allTipsFromApi = tipsResponse?.data?.dicas || [];
+        allRecipesFromApi = (recipesResponse?.data && recipesResponse.data.receitas) ? recipesResponse.data.receitas : (recipesResponse?.data || []);
+
+        // Filtra receitas e dicas que têm um número no título
+        const availableTips = allTipsFromApi.filter(hasNumberInTitle);
+        // Filtra receitas que têm um número no título E um link de YouTube válido no conteúdo
+        const availableRecipes = allRecipesFromApi.filter(recipe => 
+            hasNumberInTitle(recipe) && getYouTubeThumbnail(recipe.conteudo) // Verifica se o conteúdo tem um link válido
         );
-        console.log('Receitas filtradas com URL de foto/vídeo válidas para seleção:', allRecipes.length, allRecipes);
+        console.log('Dicas filtradas com número no título:', availableTips.length);
+        console.log('Receitas filtradas com número no título e URL válida no conteúdo:', availableRecipes.length);
 
 
-        tipToSet = getRandomItem(allTips);
-        recipeToSet = getRandomItem(allRecipes); // Seleciona apenas de receitas válidas
+        if (lastFetchDate === today && savedDailyTipTitle && savedDailyRecipeTitle) {
+            console.log('Conteúdo diário já salvo para hoje. Tentando carregar por título...');
+            
+            tipToSet = availableTips.find(tip => tip.titulo === savedDailyTipTitle);
+            recipeToSet = availableRecipes.find(recipe => recipe.titulo === savedDailyRecipeTitle);
 
-        await AsyncStorage.setItem('@lastDailyContentFetchDate', today);
-        if (tipToSet) {
-          await AsyncStorage.setItem('@dailyTipId', tipToSet.id);
+            if (tipToSet) {
+                console.log('Dica salva carregada por título:', tipToSet.titulo);
+            } else {
+                console.warn('Dica salva por título não encontrada. Marcando para nova seleção.');
+                needsNewSelection = true;
+            }
+
+            if (recipeToSet) {
+                console.log('Receita salva carregada por título:', recipeToSet.titulo);
+            } else {
+                console.warn('Receita salva por título não encontrada. Marcando para nova seleção.');
+                needsNewSelection = true;
+            }
         } else {
-          await AsyncStorage.removeItem('@dailyTipId');
+            console.log('Data mudou ou títulos salvos ausentes. Marcando para nova seleção.');
+            needsNewSelection = true;
         }
-        if (recipeToSet) {
-          await AsyncStorage.setItem('@dailyRecipeId', recipeToSet.id);
-        } else {
-          await AsyncStorage.removeItem('@dailyRecipeId');
-        }
-        console.log('Novo conteúdo diário definido e salvo.');
-      }
 
-      setDailyTip(tipToSet);
-      setDailyRecipe(recipeToSet);
-      setIsTipExpanded(false);
-      setIsRecipeExpanded(false);
+        if (needsNewSelection || !tipToSet || !recipeToSet) {
+            console.log('Realizando nova seleção aleatória de conteúdo diário...');
+            tipToSet = getRandomItem(availableTips);
+            recipeToSet = getRandomItem(availableRecipes);
+
+            // Salva a nova seleção para hoje
+            await AsyncStorage.setItem('@lastDailyContentFetchDate', today);
+            if (tipToSet) {
+                await AsyncStorage.setItem('@dailyTipTitle', tipToSet.titulo);
+            } else {
+                await AsyncStorage.removeItem('@dailyTipTitle');
+            }
+            if (recipeToSet) {
+                await AsyncStorage.setItem('@dailyRecipeTitle', recipeToSet.titulo);
+            } else {
+                await AsyncStorage.removeItem('@dailyRecipeTitle');
+            }
+            console.log('Novo conteúdo diário definido e salvo no AsyncStorage.');
+
+        } else {
+            console.log('Conteúdo diário carregado com sucesso do cache/salvo para hoje. Nenhuma nova busca completa necessária.');
+        }
 
     } catch (error) {
       console.error('Erro geral ao buscar ou carregar conteúdo diário:', error);
       Alert.alert('Erro', 'Não foi possível carregar o conteúdo do dia. Tente novamente mais tarde.');
+      tipToSet = null;
+      recipeToSet = null;
     } finally {
+      setDailyTip(tipToSet);
+      setDailyRecipe(recipeToSet);
+      setIsTipExpanded(false);
+      setIsRecipeExpanded(false);
       setLoadingDailyContent(false);
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
+      console.log('HomeScreen: useFocusEffect acionado.');
       fetchUserName();
       loadUserProfileImage();
       fetchDailyContent();
-      return () => {};
+      return () => {
+        console.log('HomeScreen: useFocusEffect cleanup.');
+      };
     }, [fetchUserName, loadUserProfileImage, fetchDailyContent])
   );
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho com boas-vindas */}
+      {/* Header com boas-vindas */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.profileButton} onPress={() => navigation.navigate('Perfil')}>
           {userProfileImage ? (
@@ -237,7 +257,7 @@ export default function Home() {
             {isTipExpanded && (
               <TouchableOpacity
                 style={styles.viewMoreButton}
-                onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Dicas' })}
+                onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'DicasDeModa' })}
               >
                 <Text style={styles.viewMoreButtonText}>Ver todas as Dicas</Text>
               </TouchableOpacity>
@@ -259,17 +279,17 @@ export default function Home() {
           <ActivityIndicator size="small" color="#464193" style={styles.loadingIndicator} />
         ) : dailyRecipe ? (
           <TouchableOpacity style={styles.dailyCard} onPress={() => setIsRecipeExpanded(!isRecipeExpanded)} activeOpacity={0.8}>
-            {dailyRecipe.fotos && dailyRecipe.fotos.length > 0 ? (
+            {/* Renderiza a imagem da thumbnail do YouTube se o link for encontrado no conteúdo */}
+            {getYouTubeThumbnail(dailyRecipe.conteudo) ? (
               <Image
-                source={{ uri: getYouTubeThumbnail(dailyRecipe.fotos[0]) || `https://placehold.co/${width * 0.8}x${height * 0.18}/cccccc/333333?text=Imagem+Nao+Disponivel` }}
+                source={{ uri: getYouTubeThumbnail(dailyRecipe.conteudo) }}
                 style={styles.dailyCardImage}
                 resizeMode="cover"
                 onError={(e) => console.log('Erro ao carregar imagem da receita:', e.nativeEvent.error)}
               />
-            ) : (
-              // Fallback para imagem placeholder se não houver fotos
+            ) : ( // Placeholder se não houver thumbnail ou link
               <Image
-                source={{ uri: `https://tocoringandooo/${width * 0.8}x${height * 0.18}/cccccc/333333?text=Imagem+Nao+Disponivel` }}
+                source={{ uri: `https://placehold.co/${width * 0.8}x${height * 0.18}/cccccc/333333?text=Video+Nao+Disponivel` }}
                 style={styles.dailyCardImage}
                 resizeMode="cover"
               />
@@ -281,7 +301,7 @@ export default function Home() {
             {isRecipeExpanded && (
               <TouchableOpacity
                 style={styles.viewMoreButton}
-                onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Receitas' })}
+                onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'ReceitasDeModa' })}
               >
                 <Text style={styles.viewMoreButtonText}>Ver todas as Receitas</Text>
               </TouchableOpacity>
@@ -301,7 +321,7 @@ export default function Home() {
         <View style={styles.buttonGrid}>
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Receitas' })}
+            onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'ReceitasDeModa' })}
           >
             <Ionicons name="book-outline" size={width * 0.1} color="#fff" />
             <Text style={styles.navButtonText}>Receitas de Moda</Text>
@@ -309,7 +329,7 @@ export default function Home() {
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Dicas' })}
+            onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'DicasDeModa' })}
           >
             <Ionicons name="bulb-outline" size={width * 0.1} color="#fff" />
             <Text style={styles.navButtonText}>Dicas de Moda</Text>
@@ -317,7 +337,7 @@ export default function Home() {
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => navigation.getParent()?.navigate('OutrosStack', { screen: 'quiz' })}
+            onPress={() => navigation.getParent()?.navigate('Quiz')}
           >
             <Ionicons name="game-controller-outline" size={width * 0.1} color="#fff" />
             <Text style={styles.navButtonText}>Quiz</Text>

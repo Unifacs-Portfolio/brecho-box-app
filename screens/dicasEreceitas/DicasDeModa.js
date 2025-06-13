@@ -16,14 +16,17 @@ import api from '../../src/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
+const primaryColor = '#473da1'; 
+const dangerColor = '#D9534F'; 
 
 export default function DicasDeModa({ navigation }) {
   const [dicas, setDicas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null); 
   const [userToken, setUserToken] = useState(null);
+  const [userEmail, setUserEmail] = useState(null); 
 
   // Função para extrair URLs de um texto
   const extractAndOpenURL = (text) => {
@@ -36,22 +39,27 @@ export default function DicasDeModa({ navigation }) {
     return false;
   };
 
-  // Função para buscar o ID e token do usuário logado
+  // Função para buscar o ID, email e token do usuário logado
   const fetchUserData = useCallback(async () => {
     try {
       const email = await AsyncStorage.getItem('@currentUserEmail');
       const token = await AsyncStorage.getItem('userToken');
       setUserToken(token);
+      setUserEmail(email); // Armazena o email também
 
       if (email && token) {
         const response = await api.get(`/api/usuario/${email}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        // CORREÇÃO AQUI: Acessa user.id conforme o log da API
-        const userId = response.data?.user?.id;
+
+
+        const userId = response.data?.id || response.data?.user?.id; 
         setCurrentUserId(userId);
+        console.log("Usuário logado ID (fetchUserData):", userId);
+        console.log("Usuário logado Email (fetchUserData):", email);
       } else {
         setCurrentUserId(null);
+        console.log("Nenhum usuário logado ou token ausente.");
       }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário para dicas:', error.response?.data || error.message);
@@ -66,17 +74,19 @@ export default function DicasDeModa({ navigation }) {
     try {
       const response = await api.get('/api/Moda/dicas');
 
-      if (response.data && Array.isArray(response.data)) {
-        dataToProcess = response.data;
+      if (response.data.dicas && Array.isArray(response.data.dicas)) {
+        dataToProcess = response.data.dicas;
       } else {
         Alert.alert('Aviso', 'Estrutura de dados da API inesperada ou vazia. Carregando dicas padrão.');
+        // Dados padrão de exemplo com usuarioId e email para teste de autoria
         dataToProcess = [
           {
             id: 'dica-xyz1',
             titulo: 'DICA 1 - Essencial: Crie um Guarda-Roupas Cápsula',
             conteudo: 'Tenha peças-chave versáteis que combinem entre si, reduzindo o excesso e facilitando a criação de looks.',
             isverify: true,
-            idUsuario: 'user123',
+            usuarioId: '0370e782-4669-4ac4-8f59-c5bba0cd4225', // ID de exemplo
+            email: 'usuario1@example.com', // Email associado a este ID
             verifyBy: 'admin',
             dataCriacao: '2025-05-10T10:00:00.000Z',
             ultimaAlteracao: '2025-05-10T10:00:00.000Z',
@@ -92,28 +102,13 @@ export default function DicasDeModa({ navigation }) {
             titulo: 'DICA 2 - Reutilize e Customiza: Transforme Suas Roupas Antigas',
             conteudo: 'Não descarte roupas antigas! Use bordados, patches ou tingimento para dar uma nova vida às suas peças.',
             isverify: true,
-            idUsuario: 'user456',
+            usuarioId: 'outro_id_de_usuario', // Outro ID de exemplo
+            email: 'usuario2@example.com', // Outro email
             verifyBy: null,
             dataCriacao: '2025-05-12T11:30:00.000Z',
             ultimaAlteracao: '2025-05-12T11:30:00.000Z',
             tema: 'Upcycling',
             subtemas: []
-          },
-          {
-            id: 'dica-def3',
-            titulo: 'DICA 3 - Priorize Tecidos Sustentáveis e Naturais',
-            conteudo: 'Opte por roupas feitas de algodão orgânico, linho, cânhamo ou tencel, que causam menos impacto ambiental.',
-            isverify: true,
-            idUsuario: 'user123',
-            verifyBy: 'monitor',
-            dataCriacao: '2025-05-15T14:45:00.000Z',
-            ultimaAlteracao: '2025-05-15T14:45:00.000Z',
-            tema: 'Materiais',
-            subtemas: [{
-              dica_id: 'dica-def3',
-              subtema_id: 'tecidos-ecologicos',
-              assunto: 'Dica de especialista: Estes materiais são mais respiráveis e duradouros.'
-            }]
           },
         ];
       }
@@ -131,8 +126,9 @@ export default function DicasDeModa({ navigation }) {
       console.error('Erro ao buscar dicas:', error);
       Alert.alert('Erro', 'Não foi possível carregar as dicas da API. Carregando dicas padrão.');
       setDicas([
-        { id: 'dica-xyz1', titulo: 'DICA 1 - Teste', conteudo: 'Conteúdo...', isverify: true, idUsuario: 'user123', dataCriacao: '...', subtemas: [] },
-        { id: 'dica-abc2', titulo: 'DICA 2 - Teste', conteudo: 'Conteúdo...', isverify: true, idUsuario: 'anotherUser', dataCriacao: '...', subtemas: [] },
+        // Exemplo de fallback com usuarioId e email
+        { id: 'dica-xyz1', titulo: 'DICA 1 - Teste', conteudo: 'Conteúdo...', isverify: true, usuarioId: '0370e782-4669-4ac4-8f59-c5bba0cd4225', email: 'usuario1@example.com', dataCriacao: '...', subtemas: [] },
+        { id: 'dica-abc2', titulo: 'DICA 2 - Teste', conteudo: 'Conteúdo...', isverify: true, usuarioId: 'outro_id_de_usuario', email: 'usuario2@example.com', dataCriacao: '...', subtemas: [] },
       ]);
     } finally {
       setLoading(false);
@@ -143,12 +139,13 @@ export default function DicasDeModa({ navigation }) {
   useEffect(() => {
     fetchUserData();
     fetchDicas();
+    // Listener para recarregar as dicas quando a tela estiver em foco
     const unsubscribe = navigation.addListener('focus', () => {
-        fetchUserData();
+        fetchUserData(); // Recarrega os dados do usuário para garantir email/ID atualizados
         fetchDicas();
     });
     return unsubscribe;
-  }, [fetchUserData, fetchDicas, navigation]);
+  }, [fetchUserData, fetchDicas, navigation]); // Adicionado fetchUserData às dependências
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -159,20 +156,22 @@ export default function DicasDeModa({ navigation }) {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const handleDeleteDica = async (dicaId, dicaUserId) => {
-    if (!userToken) {
+  const handleDeleteDica = async (dicaId, dicaUsuarioId) => { // Agora recebe o usuarioId da dica
+    if (!userToken || !userEmail) {
       Alert.alert('Erro', 'Você precisa estar logado para deletar dicas.');
       navigation.navigate('Login');
       return;
     }
-    if (currentUserId !== dicaUserId) {
+
+    if (!dicaUsuarioId || currentUserId !== dicaUsuarioId) {
       Alert.alert('Ação Não Permitida', 'Você só pode deletar dicas que você mesmo criou.');
+      console.log(`Tentativa de deletar: currentUserId = ${currentUserId}, dicaUsuarioId = ${dicaUsuarioId}`);
       return;
     }
 
     Alert.alert(
       'Confirmar Exclusão',
-      'Tem certeza que deseja excluir esta dica?',
+      'Tem certeza que deseja excluir esta dica? Esta ação é irreversível.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -184,9 +183,13 @@ export default function DicasDeModa({ navigation }) {
                 headers: {
                   'Authorization': `Bearer ${userToken}`,
                 },
+                data: {
+                  email: userEmail, 
+                }
               });
-              if (response.status === 200) {
+              if (response.status === 200 || response.status === 204) {
                 Alert.alert('Sucesso', 'Dica excluída com sucesso!');
+                // Remove a dica do estado local para que a lista seja atualizada
                 setDicas(prevDicas => prevDicas.filter(dica => dica.id !== dicaId));
               } else {
                 Alert.alert('Erro', response.data?.message || 'Erro ao excluir dica.');
@@ -206,7 +209,7 @@ export default function DicasDeModa({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('EscolhaDicasReceitas')}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
@@ -231,25 +234,23 @@ export default function DicasDeModa({ navigation }) {
               const isExpanded = expandedId === item.id;
               const hasSubtemaAssunto = item.subtemas && item.subtemas.length > 0 && item.subtemas[0].assunto;
               const subtemaAssunto = hasSubtemaAssunto ? item.subtemas[0].assunto : null;
-              const isOwner = currentUserId === item.idUsuario;
+              const isOwner = currentUserId && item.usuarioId && currentUserId === item.usuarioId;
+
+              console.log(`Dica ID: ${item.id}, Título: ${item.titulo}`);
+              console.log(`  usuarioId da Dica: ${item.usuarioId}, currentUserId (logado): ${currentUserId}`);
+              console.log(`  É o criador (isOwner)? ${isOwner}`);
+
 
               return (
                 <TouchableOpacity
                   key={item.id}
                   style={styles.card}
-                  onPress={() => toggleExpand(item.id)}
+                  onPress={() => toggleExpand(item.id)} 
                   activeOpacity={0.8}
                 >
                   <View style={styles.cardHeader}>
                     <Text style={styles.title}>{item.titulo}</Text>
-                    {isOwner && (
-                      <TouchableOpacity
-                        onPress={() => handleDeleteDica(item.id, item.idUsuario)}
-                        style={styles.deleteButton}
-                      >
-                        <Ionicons name="trash-outline" size={20} color="red" />
-                      </TouchableOpacity>
-                    )}
+                    {/* Ícone de expansão */}
                     <Ionicons
                       name={isExpanded ? 'chevron-up' : 'chevron-down'}
                       size={20}
@@ -280,6 +281,21 @@ export default function DicasDeModa({ navigation }) {
                       {!item.isCreatedBySpecialist && item.isverify && !item.verifyBy && (
                         <Text style={styles.verifiedBadge}>Verificado</Text>
                       )}
+
+                      {/* Botão de Excluir - Visível apenas se o usuário for o criador */}
+                      {isOwner && (
+                        <TouchableOpacity
+                          style={[styles.deleteButton, loading && styles.disabledButton]}
+                          onPress={() => handleDeleteDica(item.id, item.usuarioId)} // Passa ID da dica e usuarioId do criador
+                          disabled={loading}
+                        >
+                          {loading ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text style={styles.deleteButtonText}>Excluir Dica</Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
                     </View>
                   )}
                 </TouchableOpacity>
@@ -293,7 +309,7 @@ export default function DicasDeModa({ navigation }) {
 
       <TouchableOpacity
         style={styles.createButton}
-        onPress={() => navigation.navigate('CreateDicas')}
+        onPress={() => navigation.navigate('CreateDicas')} 
       >
         <Ionicons name="add" size={30} color="#fff" />
       </TouchableOpacity>
@@ -304,7 +320,7 @@ export default function DicasDeModa({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#473da1',
+    backgroundColor: primaryColor, 
     paddingTop: 50,
     paddingHorizontal: 20,
   },
@@ -349,10 +365,6 @@ const styles = StyleSheet.create({
     color: '#464193',
     marginRight: 10,
     flexShrink: 1,
-  },
-  deleteButton: {
-    marginLeft: 'auto',
-    padding: 5,
   },
   expandedContent: {
     marginTop: 10,
@@ -419,5 +431,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
+  },
+  deleteButton: { 
+    backgroundColor: dangerColor,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 15,
+    alignSelf: 'flex-end', 
+  },
+  disabledButton: { 
+    opacity: 0.7,
+  },
+  deleteButtonText: { 
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
