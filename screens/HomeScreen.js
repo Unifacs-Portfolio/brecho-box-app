@@ -326,7 +326,7 @@ export default function Home() {
         <View style={styles.buttonGrid}>
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'ReceitasDeModa' })}
+            onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Receitas' })}
           >
             <Ionicons name="book-outline" size={width * 0.1} color="#fff" />
             <Text style={styles.navButtonText}>Receitas de Moda</Text>
@@ -334,7 +334,7 @@ export default function Home() {
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'DicasDeModa' })}
+            onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Dicas' })}
           >
             <Ionicons name="bulb-outline" size={width * 0.1} color="#fff" />
             <Text style={styles.navButtonText}>Dicas de Moda</Text>
