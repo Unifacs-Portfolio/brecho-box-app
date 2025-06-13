@@ -34,9 +34,6 @@ export default function Quiz({ navigation }) {
 
   
   const intervalIdRef = useRef(null);
-
- 
-
   // Mapeamento dos ícones baseados na pontuação
   const treeIcons = [
     arvore0,
@@ -184,9 +181,9 @@ export default function Quiz({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.backToHomeButton}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backToHomeButtonText}>Voltar para Home</Text>
+          <Text style={styles.backToHomeButtonText}>Voltar</Text>
         </TouchableOpacity>
       </View>
     );

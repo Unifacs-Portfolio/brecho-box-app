@@ -86,7 +86,6 @@ export default function Login({ navigation }) {
       }
 
       console.log('Login bem-sucedido');
-      console.log('Dados do usuário:', userResponse.data);
       navigation.navigate('AppTabs');
 
     } catch (error) {

@@ -6,11 +6,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const { width, height } = Dimensions.get('window');
 
 export default function ModificarDados({ navigation, route }) {
   const [nome, setNome] = useState('');
@@ -21,23 +24,22 @@ export default function ModificarDados({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [userToken, setUserToken] = useState(null);
 
+  // Função para formatar o telefone para exibição
   const formatarTelefone = (valor) => {
-    // Remove tudo que não for número
     const numeros = valor.replace(/\D/g, '');
 
-    // Aplica a máscara dependendo do tamanho
     if (numeros.length <= 2) {
-        return '(' + numeros;
+      return '(' + numeros;
     } else if (numeros.length <= 7) {
-        return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
     } else if (numeros.length <= 11) {
-        return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
     } else {
-        // Limita a 11 dígitos (padrão brasileiro com DDD e número com 9 dígitos)
-        return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
     }
-};
+  };
 
   // Carrega os dados do usuário ao abrir a tela
   useEffect(() => {
@@ -45,22 +47,24 @@ export default function ModificarDados({ navigation, route }) {
       try {
         setFetching(true);
         const currentEmail = await AsyncStorage.getItem('@currentUserEmail');
-        if (!currentEmail) {
-          throw new Error('Nenhum usuário logado');
+        const token = await AsyncStorage.getItem('userToken');
+        
+        if (!currentEmail || !token) {
+          throw new Error('Nenhum usuário logado ou token não encontrado');
         }
+        setUserToken(token);
         setUserEmail(currentEmail);
         setEmail(currentEmail);
 
-
-        const response = await api.get(`/api/usuario/${currentEmail}`);
+        const response = await api.get(`/api/usuario/${currentEmail}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
         
-        if (response.data) {
-          const userData = response.data.usuario || response.data;
-          setNome(userData.nome || '');
-          
-          // Formata o telefone antes de exibir
-          if (userData.telefone) {
-            setTelefone(formatarTelefone(userData.telefone));
+
+        if (response.data?.user) {
+          setNome(response.data.user.nome || '');
+          if (response.data.user.telefone) {
+            setTelefone(formatarTelefone(response.data.user.telefone));
           } else {
             setTelefone('');
           }
@@ -78,7 +82,8 @@ export default function ModificarDados({ navigation, route }) {
         }
 
       } catch (error) {
-        console.error('Erro ao carregar dados do usuário:', error);
+        console.error('Erro ao carregar dados do usuário em ModificarDados:', error.response?.data || error.message);
+        Alert.alert('Erro', 'Não foi possível carregar os dados do usuário.');
       } finally {
         setFetching(false);
       }
@@ -87,58 +92,61 @@ export default function ModificarDados({ navigation, route }) {
     loadUserData();
   }, []);
 
-  
-
+  // Função para salvar as alterações
   const salvarAlteracoes = async () => {
     if (loading) return;
 
-    await AsyncStorage.setItem(`@userData:${userEmail}`, JSON.stringify({ nome }));
-    
     if (!nome || !telefone) {
       Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
       return;
     }
 
-    // Validação de senha (mínimo 6 caracteres)
-    const validatePassword = (senha) => {
-      return senha.length >= 6;
-    };
+    const telefoneParaAPI = telefone.replace(/\D/g, '');
 
-     if (senha && !validatePassword(senha)) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
+    if (telefoneParaAPI.length < 10 || telefoneParaAPI.length > 11) {
+      Alert.alert('Erro', 'Por favor, insira um número de telefone válido (DDD + 8 ou 9 dígitos).');
+      setLoading(false);
       return;
     }
 
+    const validatePassword = (pwd) => {
+      return pwd.length >= 6;
+    };
+
+    if (senha && !validatePassword(senha)) {
+      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
 
     setLoading(true);
 
     try {
       const updateData = {
         nome,
-        telefone
+        telefone: telefoneParaAPI
       };
 
-      // Adiciona a senha apenas se foi preenchida
       if (senha) {
         updateData.senha = senha;
       }
 
+      console.log('Dados enviados para a API:', updateData);
+
       const response = await api.put(`/api/usuario/${userEmail}`, updateData, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
         }
       });
 
-      // Atualiza os dados locais
       const updatedUserData = {
         nome,
         email,
-        telefone
+        telefone: telefone
       };
       
       await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify(updatedUserData));
 
-      // Envia os dados atualizados de volta para a tela de perfil
       navigation.navigate('Perfil', { 
         updatedData: updatedUserData,
         refresh: true 
@@ -150,7 +158,7 @@ export default function ModificarDados({ navigation, route }) {
       
       let errorMessage = 'Erro ao atualizar dados';
       if (error.response?.data?.errors) {
-        errorMessage = error.response.data.errors.join('\n');
+        errorMessage = error.response.data.errors.map(err => err.message || err).join('\n');
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
@@ -161,7 +169,6 @@ export default function ModificarDados({ navigation, route }) {
     }
   };
 
-  
   if (fetching) {
     return (
       <View style={styles.loadingContainer}>
@@ -211,8 +218,9 @@ export default function ModificarDados({ navigation, route }) {
           placeholder="Telefone"
           keyboardType="phone-pad"
           value={telefone}
-          onChangeText={text => setTelefone(formatarTelefone(text))} // Chama a função para formatar o telefone
+          onChangeText={text => setTelefone(formatarTelefone(text))}
           editable={!loading}
+          maxLength={15}
         />
         <Ionicons name="call-outline" size={24} color={primaryColor} style={styles.icon} />
       </View>
@@ -255,20 +263,19 @@ export default function ModificarDados({ navigation, route }) {
   );
 }
 
-
 const primaryColor = '#464193';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
-    paddingTop: 50,
+    padding: width * 0.05,
+    paddingTop: height * 0.07,
   },
   backButton: {
     position: 'absolute',
-    top: 50,
-    left: 20,
+    top: height * 0.05,
+    left: width * 0.05,
     padding: 10,
   },
   loadingContainer: {
@@ -280,13 +287,13 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 20,
     color: primaryColor,
-    fontSize: 16,
+    fontSize: width * 0.04,
   },
   header: {
-    fontSize: 22,
+    fontSize: width * 0.06,
     fontWeight: 'bold',
     color: primaryColor,
-    marginBottom: 30,
+    marginBottom: height * 0.03,
     textAlign: 'center',
   },
   inputContainer: {
@@ -295,31 +302,31 @@ const styles = StyleSheet.create({
     borderColor: primaryColor,
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 20,
+    paddingHorizontal: width * 0.03,
+    marginBottom: height * 0.02,
   },
   input: {
     flex: 1,
-    paddingVertical: 10,
-    paddingRight: 10,
-    fontSize: 16,
+    paddingVertical: height * 0.015,
+    paddingRight: width * 0.02,
+    fontSize: width * 0.04,
   },
   icon: {
-    marginLeft: 5,
+    marginLeft: width * 0.01,
   },
   saveButton: {
     backgroundColor: primaryColor,
-    paddingVertical: 14,
+    paddingVertical: height * 0.02,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: height * 0.02,
   },
   disabledButton: {
     backgroundColor: '#999',
   },
   saveButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: width * 0.045,
     fontWeight: '600',
   },
 });

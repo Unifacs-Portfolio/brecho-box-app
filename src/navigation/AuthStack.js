@@ -12,12 +12,12 @@ const Stack = createNativeStackNavigator();
 export default function AuthStack() {
   return (
     <Stack.Navigator initialRouteName="AuthChecker" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="AuthChecker" component={AuthChecker} />
-      <Stack.Screen name="Inicio" component={Inicio} />
-      <Stack.Screen name="Registro" component={RegistroScreen} />
-      <Stack.Screen name="Login" component={Login} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-      <Stack.Screen name="AppTabs" component={AppTabs} />
+      <Stack.Screen name="AuthChecker" component={AuthChecker} options={{ headerShown: false }} />
+      <Stack.Screen name="Inicio" component={Inicio} options={{ headerShown: false }} />
+      <Stack.Screen name="Registro" component={RegistroScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }} />
+      <Stack.Screen name="AppTabs" component={AppTabs} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

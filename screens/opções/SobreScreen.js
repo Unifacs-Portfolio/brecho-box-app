@@ -49,11 +49,11 @@ export default function SobreScreen({ navigation }) {
           </View>
           <Text style={styles.cardContent}>
             • Ana Priscilla Silva Oliveira  {'\n'}
-            • Roan Nascimento Lisboa {'\n'}
-            • Pedro Henrique de Oliveira Carvalho {'\n'}
-            • Kleber Araujo Rodrigues {'\n'}
             • Duilio do Nascimento Brandao {'\n'}
+            • Kleber Araujo Rodrigues {'\n'}
             • Luiggi Souza Grasi  {'\n'}
+            • Pedro Henrique de Oliveira Carvalho {'\n'}
+            • Roan Nascimento Lisboa {'\n'}
           </Text>
         </View>
 

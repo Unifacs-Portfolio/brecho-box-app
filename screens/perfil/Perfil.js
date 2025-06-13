@@ -8,8 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   AppState,
-  Dimensions,
-  ScrollView
+  Dimensions
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,16 +33,15 @@ export default function Perfil() {
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentEmail, setCurrentEmail] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
 
   // Mapeamento dos ícones baseados na pontuação
   const treeIcons = [
-    arvore0,    // 0 acertos
-    arvore1,    // 1 acerto
-    arvore2,    // 2 acertos
-    arvore3,    // 3 acertos
-    arvore4,    // 4 acertos
-    arvore4     // 5 acertos (ou mais)
+    arvore0,
+    arvore1,
+    arvore2,
+    arvore3,
+    arvore4,
+    arvore4
   ];
 
   // Mapeamento dos títulos baseados na pontuação
@@ -58,12 +56,12 @@ export default function Perfil() {
 
   // Mapeamento dos estilos de badge para cada título de nível
   const scoreTitleStyles = [
-    { backgroundColor: '#e0e0e0', color: '#555555' }, // 0 pontos
-    { backgroundColor: '#d4edda', color: '#28a745' }, // 1 ponto
-    { backgroundColor: '#90EE90', color: '#1a5c2f' }, // 2 pontos
-    { backgroundColor: '#B0E0E6', color: '#4682B4' }, // 3 pontos (um azul mais roxeado)
-    { backgroundColor: '#8A2BE2', color: '#FFFFFF' }, // 4 pontos (roxo vibrante)
-    { backgroundColor: '#464193', color: '#FFFFFF' }  // 5 pontos (roxo principal)
+    { backgroundColor: '#e0e0e0', color: '#555555' },
+    { backgroundColor: '#d4edda', color: '#28a745' },
+    { backgroundColor: '#90EE90', color: '#1a5c2f' },
+    { backgroundColor: '#B0E0E6', color: '#4682B4' },
+    { backgroundColor: '#8A2BE2', color: '#FFFFFF' },
+    { backgroundColor: '#464193', color: '#FFFFFF' }
   ];
 
   // Função para obter o título do nível e o estilo correspondente
@@ -106,9 +104,10 @@ export default function Perfil() {
     try {
       setLoading(true);
       const email = await AsyncStorage.getItem('@currentUserEmail');
+      const token = await AsyncStorage.getItem('userToken');
 
-      if (!email) {
-        throw new Error('Nenhum email encontrado');
+      if (!email || !token) {
+        throw new Error('Nenhum email ou token encontrado');
       }
 
       setCurrentEmail(email);
@@ -130,16 +129,22 @@ export default function Perfil() {
         setQuizScore(0);
       }
 
-      const response = await api.get('/api/usuario');
-      if (response.data?.usuario?.nome && !userName) {
-        setUserName(response.data.usuario.nome);
+      // Faz a requisição à API com o token
+      const response = await api.get(`/api/usuario/${email}`, {
+          headers: {
+              'Authorization': `Bearer ${token}`
+          }
+      });
+      // CORREÇÃO AQUI: Acessa user.nome conforme o log da API
+      if (response.data?.user?.nome) { 
+        setUserName(response.data.user.nome);
         await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify({
-          nome: response.data.usuario.nome
+          nome: response.data.user.nome
         }));
       }
 
     } catch (error) {
-      console.error('Erro ao buscar dados do usuário:', error);
+      console.error('Erro ao buscar dados do usuário:', error.response?.data || error.message);
       Alert.alert('Erro', 'Não foi possível carregar os dados do perfil');
       setUserImage(loadDefaultImage());
       setQuizScore(0);
@@ -207,22 +212,22 @@ export default function Perfil() {
     };
 
     fetchUserData();
+
     const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
         loadData();
       }
     });
 
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+        fetchUserData();
+    });
+
     return () => {
       appStateSubscription.remove();
+      unsubscribeFocus();
     };
-  }, []);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchUserData();
-  };
-
+  }, [navigation]);
 
   if (loading) {
     return (
@@ -244,15 +249,8 @@ export default function Perfil() {
           <Ionicons name="arrow-back" size={24} color={'#fff'} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={handleRefresh}
-        >
-          <Ionicons name="refresh" size={24} color={'#fff'} />
-        </TouchableOpacity>
         <View style={styles.profileContent}>
           <Text style={styles.headerTitle}>Perfil</Text>
-        
           <TouchableOpacity onPress={pickImage}>
             <View style={styles.profileImageContainer}>
               <Image
@@ -268,23 +266,28 @@ export default function Perfil() {
             </View>
           </TouchableOpacity>
           {userName ? (
-            <Text style={styles.userName}>{userName}</Text>
-          ) : (
-            <Text style={styles.userName}>Usuário BrechóBox</Text>
-          )}
-
+          <Text style={styles.userNameInBottom}>{userName}</Text>
+        ) : (
+          <Text style={styles.userNameInBottom}>Usuário BrechóBox</Text>
+        )}    
         </View>
       </View>
 
       <View style={styles.bottomContainer}>
-        <Text style={[styles.scoreTitleBadge, currentScoreTitleStyle]}>{currentScoreTitle}</Text>
+        
+      <Text style={[styles.scoreTitleBadge, currentScoreTitleStyle]}>{currentScoreTitle}</Text>
+
+        <TouchableOpacity
+            style={styles.quizButton}
+            onPress={() => navigation.navigate('OutrosStack', { screen: 'quiz' })}
+        >
+            <Ionicons name="bulb-outline" size={24} color={'#fff'} />
+            <Text style={styles.quizButtonText}>Jogar Quiz</Text>
+        </TouchableOpacity>
       </View>
     </View>
-
-    
   );
 }
-
 
 const primaryColor = '#464193';
 
@@ -304,7 +307,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: height * 0.05,
-    left: 20,
+    left: width * 0.05,
     padding: 10,
     backgroundColor: '#ffffff44',
     borderRadius: 10,
@@ -319,6 +322,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: height * 0.03,
+    textAlign: 'center',
   },
   profileImageContainer: {
     alignItems: 'center',
@@ -357,32 +361,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.04,
     borderRadius: 20,
     overflow: 'hidden',
+    marginBottom: height * 0.02,
   },
   bottomContainer: {
     height: height * 0.3,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f2f2f2',
-    paddingBottom: height * 0.14,
+    paddingBottom: height * 0.02,
   },
-  userName: {
+  userNameInBottom: {
     fontSize: width * 0.06,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
     marginBottom: height * 0.02,
+    marginTop: height * 0.04,
   },
-  settingsButtonFloating: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
+  quizButton: {
     backgroundColor: primaryColor,
-    borderRadius: 30,
-    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: height * 0.02,
+    paddingHorizontal: width * 0.08,
+    borderRadius: 20,
+    marginTop: height * 0.01,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    marginBottom: height * 0.08,
+  },
+  quizButtonText: {
+    color: '#fff',
+    fontSize: width * 0.045,
+    fontWeight: '600',
+    marginLeft: 10,
   },
 });

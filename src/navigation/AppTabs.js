@@ -2,7 +2,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../../screens/HomeScreen';
 import Perfil from '../../screens/perfil/Perfil';
-import Quiz from '../../screens/quiz';
 import DicasOuReceitasStack from './DicasOuReceitasStack';
 import ConfiguracoesStack from './ConfiguracoesStack';
 
@@ -24,7 +23,6 @@ export default function AppTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />), }} />
       <Tab.Screen name="Dicas/Receitas" component={DicasOuReceitasStack} options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="list" size={size} color={color} />), }} />
-      <Tab.Screen name="Quiz" component={Quiz} options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="help-circle" size={size} color={color} />), }} />
       <Tab.Screen name="Perfil" component={Perfil} options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="person" size={size} color={color} />), }} />
       <Tab.Screen name="Configurações" component={ConfiguracoesStack} options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="settings" size={size} color={color} />), }} />
     </Tab.Navigator>

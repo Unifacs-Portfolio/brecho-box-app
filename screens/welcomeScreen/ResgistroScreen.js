@@ -79,7 +79,7 @@ export default function RegistroScreen({ navigation }) {
         senha,
         tokens: 'random-token-' + Math.random().toString(36).substring(2),
         telefone: telefoneFormatadoParaAPI, // Envia o telefone formatado para a API
-        nivelConsciencia: "1",
+        nivelConsciencia: 1,
         isMonitor: false
       });
 

@@ -13,14 +13,14 @@ export default function EscolhaDicasReceitas({ navigation }) {
 
       <TouchableOpacity
         style={styles.optionButton}
-        onPress={() => navigation.navigate('DicasDeModa')}
+        onPress={() => navigation.navigate('Dicas')}
       >
         <Text style={styles.optionText}>Dicas de Moda</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.optionButton}
-        onPress={() => navigation.navigate('ReceitasDeModa')}
+        onPress={() => navigation.navigate('Receitas')}
       >
         <Text style={styles.optionText}>Receitas de Moda</Text>
       </TouchableOpacity>
