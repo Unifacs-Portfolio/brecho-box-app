@@ -27,6 +27,11 @@ export default function Home() {
   const [isRecipeExpanded, setIsRecipeExpanded] = useState(false);
   const [userProfileImage, setUserProfileImage] = useState(null);
 
+  const getRandomItem = (items) => {
+    const randomIndex = Math.floor(Math.random() * items.length);
+    return items[randomIndex];
+  };
+
   // Regex para encontrar URLs do YouTube no texto do conteúdo
   const youtubeUrlRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
 
