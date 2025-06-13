@@ -342,7 +342,7 @@ export default function Home() {
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => navigation.navigate('OutrosStacks', {screen: 'Quiz'})}
+            onPress={() =>  navigation.navigate('OutrosStack', { screen: 'quiz' })}
           >
             <Ionicons name="game-controller-outline" size={width * 0.1} color="#fff" />
             <Text style={styles.navButtonText}>Quiz</Text>
