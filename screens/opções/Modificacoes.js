@@ -15,7 +15,7 @@ export default function Modificacoes({ navigation }) {
       await AsyncStorage.removeItem('@quizScore');
 
       console.log('Usuário deslogado');
-      navigation.navigate('Login'); // Redireciona para a tela de Login
+      navigation.navigate('AuthStack', { screen: 'Login'}); 
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
