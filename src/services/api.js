@@ -3,10 +3,11 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: 'https://api-consumo-app.onrender.com',
+    timeout: 30000,
     headers: {
-        'Content-Type': 'application/json',
-    },
-});
+      'Accept': 'application/json',
+    }
+  });
 
 // Interceptor para adicionar o token às requisições
 api.interceptors.request.use(
@@ -35,6 +36,26 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+// Adicione este interceptor
+api.interceptors.request.use(async (config) => {
+    // Corrige automaticamente URLs mal escritas
+    if (config.url.includes('recsitas')) {
+      config.url = config.url.replace('recsitas', 'receitas');
+    }
+    
+    const token = await AsyncStorage.getItem('userToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    // Remove header Content-Type para FormData
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
+    return config;
+  });
 
 export default api;
 

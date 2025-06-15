@@ -31,21 +31,21 @@ export default function CreateReceitasScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [userToken, setUserToken] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]); 
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const token = await AsyncStorage.getItem('userToken');
         const email = await AsyncStorage.getItem('@currentUserEmail');
-        const userId = await AsyncStorage.getItem('@currentUserId');
+        const id = await AsyncStorage.getItem('@currentUserId');
         setUserToken(token);
         setUserEmail(email);
-        setCurrentUserId(userId);
+        setCurrentUserId(id);
 
-        if (email && token && userId) {
-          const response = await api.get(`/api/usuario/${userId}`, {
+        if (email && token && id) {
+          const response = await api.get(`/api/usuario/${id}`, {
               headers: { Authorization: `Bearer ${token}` }
           });
           const userId = response.data?.id || response.data?.user?.id; 
@@ -71,17 +71,34 @@ export default function CreateReceitasScreen({ navigation }) {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true, // Permite selecionar múltiplas imagens
-        quality: 0.7, // Qualidade da imagem
-        selectionLimit: 8 - selectedImages.length, // Limita novas seleções para não exceder 8
+        allowsMultipleSelection: true,
+        quality: 0.7,
+        selectionLimit: 8 - selectedImages.length,
       });
 
       if (!result.canceled && result.assets) {
-        // Mapeia os assets para obter apenas as URIs e adiciona ao estado
-        const newImages = result.assets.map(asset => ({ uri: asset.uri, type: asset.type, name: asset.fileName || asset.uri.split('/').pop() }));
+        // Mapear os assets para um formato que inclua o nome do arquivo
+        const newImages = await Promise.all(result.assets.map(async (asset) => {
+          let fileName = asset.fileName || asset.uri.split('/').pop();
+          let fileType = asset.type;
+
+          // Tentar inferir o tipo do arquivo se não estiver presente (para compatibilidade)
+          if (!fileType) {
+            const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+            if (fileInfo.exists) {
+              const extension = fileName.split('.').pop().toLowerCase();
+              if (extension === 'jpg' || extension === 'jpeg') fileType = 'image/jpeg';
+              else if (extension === 'png') fileType = 'image/png';
+              else if (extension === 'gif') fileType = 'image/gif';
+              else fileType = 'application/octet-stream'; 
+            }
+          }
+
+          return { uri: asset.uri, type: fileType, name: fileName };
+        }));
+
         setSelectedImages(prevImages => {
           const combinedImages = [...prevImages, ...newImages];
-          // Garante que não excede o limite de 8 imagens
           return combinedImages.slice(0, 8); 
         });
       }
@@ -91,7 +108,6 @@ export default function CreateReceitasScreen({ navigation }) {
     }
   };
 
-  // Função para remover uma imagem selecionada
   const removeImage = (uriToRemove) => {
     setSelectedImages(prevImages => prevImages.filter(image => image.uri !== uriToRemove));
   };
@@ -118,50 +134,70 @@ export default function CreateReceitasScreen({ navigation }) {
       formData.append('conteudo', conteudoComYoutube);
       formData.append('email', userEmail); 
       formData.append('tema', "Moda"); 
-      formData.append('subtemas', ["subtema-moda-sustentavel"]); 
 
+      const subtemasArray = ["subtema-moda-sustentavel"];
+      subtemasArray.forEach(subtema => {
+        formData.append('subtemas[]', subtema); // Notação de array
+      });
   
-      for (const image of selectedImages) {
-        const fileUri = image.uri;
-        const fileName = image.name || fileUri.split('/').pop();
-        let fileType = image.type;
-        if (!fileType) {
-            const fileInfo = await FileSystem.getInfoAsync(fileUri);
-            if (fileInfo.exists) {
-                const extension = fileName.split('.').pop().toLowerCase();
-                if (extension === 'jpg' || extension === 'jpeg') fileType = 'image/jpeg';
-                else if (extension === 'png') fileType = 'image/png';
-                else if (extension === 'gif') fileType = 'image/gif';
-                else fileType = 'application/octet-stream'; 
-            }
-        }
-
-        formData.append('fotos', { 
-          uri: fileUri,
-          name: fileName,
-          type: fileType, 
+      selectedImages.forEach((image, index) => {
+        formData.append('fotos', {
+          // Objeto com propriedades específicas
+          uri: image.uri,
+          name: image.name || `receita_img_${Date.now()}_${index}.jpg`,
+          type: image.type || 'image/jpeg'
         });
-      }
+      });
 
-      console.log('Dados para criar receita:', formData);
+      console.log('Enviando FormData com:', {
+        titulo,
+        conteudo,
+        email: userEmail,
+        tema: "Moda",
+        subtemas: subtemasArray,
+        imageCount: selectedImages.length
+      });
+  
+
+      console.log('Enviando para API:', {
+        titulo,
+        conteudo: conteudoComYoutube,
+        userEmail,
+        imageCount: selectedImages.length
+      });
+
+      
 
       const response = await api.post('/api/receitas', formData, {
         headers: {
           'Authorization': `Bearer ${userToken}`,
+          'Accept': 'application/json',
         },
+        transformRequest: () => formData, 
       });
+        
+  
 
       console.log('Resposta da API ao criar receita:', response.data);
 
       if (response.status === 201) {
-        Alert.alert('Sucesso', 'Receita criada com sucesso!'); 
-        navigation.goBack(); 
-      } else {
-        Alert.alert('Erro', response.data?.message || 'Erro ao criar receita. Status: ' + response.status);
+        Alert.alert('Sucesso', 'Receita criada!');
+        navigation.goBack();
       }
     } catch (error) {
-      console.error('Erro ao criar receita:', error.response?.data || error.message || error);
-      Alert.alert('Erro', error.response?.data?.message || 'Não foi possível criar a receita. Tente novamente.');
+      console.error('Erro detalhado:', {
+        message: error.message,
+        code: error.code,
+        request: error.request,
+        response: error.response?.data
+      });
+      if (error.code === 'ECONNABORTED') {
+        Alert.alert('Erro', 'O servidor demorou muito para responder');
+      } else if (error.response) {
+        Alert.alert('Erro', error.response.data?.error || 'Erro no servidor');
+      } else {
+        Alert.alert('Erro de Rede', 'Verifique sua conexão com a internet');
+      }
     } finally {
       setLoading(false);
     }

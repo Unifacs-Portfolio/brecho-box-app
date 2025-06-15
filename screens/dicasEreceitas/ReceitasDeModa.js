@@ -279,8 +279,8 @@ export default function ReceitasDeModa({ navigation }) {
               let videoUrlToDisplay = null; 
               let isVideoThumbnailUsed = false; 
 
-              if (item.fotos && Array.isArray(item.fotos) && item.fotos.length > 0 && typeof item.fotos[0] === 'string' && item.fotos[0].startsWith('http')) {
-                displayImageSource = { uri: item.fotos[0] };
+              if (item.fotos && Array.isArray(item.fotos) && item.fotos.length > 0 && typeof item.fotos[0] === 'string' && item.fotos[0].startsWith('https://')) {
+                displayImageSource = { url: item.fotos[0] };
               } else {
                 const { videoUrl, thumbnailUrl } = extractYouTubeUrlAndGetThumbnail(item.conteudo);
                 if (thumbnailUrl) {
