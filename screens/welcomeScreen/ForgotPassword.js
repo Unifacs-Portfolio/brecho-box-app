@@ -17,6 +17,8 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import logoApp from '../../assets/icon.jpeg';
 import api from '../../src/services/api';
 
+import StyledText from '../../src/components/StyledText';
+
 const { width, height } = Dimensions.get('window');
 
 export default function ForgotPassword({ navigation }) {
@@ -122,21 +124,22 @@ export default function ForgotPassword({ navigation }) {
       >
         <View style={styles.topCurve}>
           <Image source={logoApp} style={styles.appLogo} />
-          <Text style={styles.title}>Esqueceu a senha?</Text>
+          <StyledText style={styles.title}>Esqueceu a senha?</StyledText>
         </View>
 
         <View style={styles.formContainer}>
           {step === 'requestEmail' ? (
             // Conteúdo para solicitar o e-mail
             <>
-              <Text style={styles.instruction}>
+              <StyledText style={styles.instruction}>
                 Informe seu e-mail para receber um token de redefinição.
-              </Text>
+              </StyledText>
 
               <View style={styles.inputGroup}>
                 <TextInput
                   placeholder="E-mail"
                   placeholderTextColor="#aaa"
+                  fontfamily="Poppins-Regular"
                   style={styles.inputField}
                   value={email}
                   onChangeText={setEmail}
@@ -160,21 +163,22 @@ export default function ForgotPassword({ navigation }) {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.buttonText}>Enviar e-mail</Text>
+                  <StyledText style={styles.buttonText}>Enviar e-mail</StyledText>
                 )}
               </TouchableOpacity>
             </>
           ) : (
             // Conteúdo para inserir o token e a nova senha
             <>
-              <Text style={styles.instruction}>
+              <StyledText style={styles.instruction}>
                 Insira o token recebido por e-mail e sua nova senha.
-              </Text>
+              </StyledText>
 
               <View style={styles.inputGroup}>
                 <TextInput
                   placeholder="Token de redefinição"
                   placeholderTextColor="#aaa"
+                  fontfamily="Poppins-Regular"
                   style={styles.inputField}
                   value={token}
                   onChangeText={setToken}
@@ -193,6 +197,7 @@ export default function ForgotPassword({ navigation }) {
                 <TextInput
                   placeholder="Nova Senha"
                   placeholderTextColor="#aaa"
+                  fontfamily="Poppins-Regular"
                   style={styles.inputField}
                   value={newPassword}
                   onChangeText={setNewPassword}
@@ -215,6 +220,7 @@ export default function ForgotPassword({ navigation }) {
                 <TextInput
                   placeholder="Confirmar Nova Senha"
                   placeholderTextColor="#aaa"
+                  fontfamily="Poppins-Regular"
                   style={styles.inputField}
                   value={confirmNewPassword}
                   onChangeText={setConfirmNewPassword}
@@ -241,7 +247,7 @@ export default function ForgotPassword({ navigation }) {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.buttonText}>Redefinir Senha</Text>
+                  <StyledText style={styles.buttonText}>Redefinir Senha</StyledText>
                 )}
               </TouchableOpacity>
             </>
@@ -251,7 +257,7 @@ export default function ForgotPassword({ navigation }) {
             onPress={() => navigation.navigate('Login')}
             disabled={loading}
           >
-            <Text style={styles.backToLogin}>Voltar para login</Text>
+            <StyledText style={styles.backToLogin}>Voltar para login</StyledText>
           </TouchableOpacity>
         </View>
       </ScrollView>

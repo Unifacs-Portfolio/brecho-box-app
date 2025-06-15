@@ -13,6 +13,8 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import StyledText from '../../src/components/StyledText';
+
 const { width, height } = Dimensions.get('window');
 
 export default function ModificarDados({ navigation, route }) {
@@ -25,6 +27,7 @@ export default function ModificarDados({ navigation, route }) {
   const [fetching, setFetching] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userToken, setUserToken] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   // Função para formatar o telefone para exibição
   const formatarTelefone = (valor) => {
@@ -48,15 +51,17 @@ export default function ModificarDados({ navigation, route }) {
         setFetching(true);
         const currentEmail = await AsyncStorage.getItem('@currentUserEmail');
         const token = await AsyncStorage.getItem('userToken');
+        const id = await AsyncStorage.getItem('@currentUserId');
         
-        if (!currentEmail || !token) {
-          throw new Error('Nenhum usuário logado ou token não encontrado');
+        if (!currentEmail || !token || !id) {
+          throw new Error('Nenhum email ou token encontrado');
         }
         setUserToken(token);
         setUserEmail(currentEmail);
         setEmail(currentEmail);
+        setCurrentUserId(id);
 
-        const response = await api.get(`/api/usuario/${currentEmail}`, {
+        const response = await api.get(`/api/usuario/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -173,7 +178,7 @@ export default function ModificarDados({ navigation, route }) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={primaryColor} />
-        <Text style={styles.loadingText}>Carregando seus dados...</Text>
+        <StyledText style={styles.loadingText}>Carregando seus dados...</StyledText>
       </View>
     );
   }
@@ -187,12 +192,13 @@ export default function ModificarDados({ navigation, route }) {
         <Ionicons name="arrow-back" size={24} color={'#473da1'} />
       </TouchableOpacity>
       
-      <Text style={styles.header}>Modificar Dados</Text>
+      <StyledText style={styles.header}>Modificar Dados</StyledText>
       {/* Nome */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           placeholder="Nome"
+          fontfamily="Poppins"
           value={nome}
           onChangeText={setNome}
           editable={!loading}
@@ -205,6 +211,7 @@ export default function ModificarDados({ navigation, route }) {
         <TextInput
           style={[styles.input, { color: '#666' }]}
           placeholder="E-mail"
+          fontfamily="Poppins"
           value={email}
           editable={false}
         />
@@ -217,6 +224,7 @@ export default function ModificarDados({ navigation, route }) {
           style={styles.input}
           placeholder="Telefone"
           keyboardType="phone-pad"
+          fontfamily="Poppins"
           value={telefone}
           onChangeText={text => setTelefone(formatarTelefone(text))}
           editable={!loading}
@@ -230,6 +238,7 @@ export default function ModificarDados({ navigation, route }) {
         <TextInput
           style={styles.input}
           placeholder="Nova senha ou senha atual"
+          fontfamily="Poppins"
           secureTextEntry={!mostrarSenha}
           value={senha}
           onChangeText={setSenha}
@@ -256,7 +265,7 @@ export default function ModificarDados({ navigation, route }) {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+          <StyledText style={styles.saveButtonText}>Salvar Alterações</StyledText>
         )}
       </TouchableOpacity>
     </View>

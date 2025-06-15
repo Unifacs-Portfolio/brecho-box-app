@@ -2,6 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons'; 
+
+import StyledText from '../../src/components/StyledText';
+
 export default function Modificacoes({ navigation }) {
   const logout = async () => {
     try {
@@ -27,7 +30,7 @@ export default function Modificacoes({ navigation }) {
         <Ionicons name="arrow-back" size={24} color={primaryColor} />
       </TouchableOpacity>
 
-      <Text style={styles.title}>Configurações</Text>
+      <StyledText style={styles.title}>Configurações</StyledText>
 
       <View style={styles.optionsContainer}>
         <TouchableOpacity
@@ -35,7 +38,7 @@ export default function Modificacoes({ navigation }) {
           onPress={() => navigation.navigate('ModificarDados')} 
         >
           <Ionicons name="person-outline" size={20} color={primaryColor} style={styles.buttonIcon} />
-          <Text style={styles.optionText}>Dados Pessoais</Text>
+          <StyledText style={styles.optionText}>Dados Pessoais</StyledText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -43,7 +46,7 @@ export default function Modificacoes({ navigation }) {
           onPress={() => navigation.navigate('Sobre')} 
         >
           <Ionicons name="information-circle-outline" size={20} color={primaryColor} style={styles.buttonIcon} />
-          <Text style={styles.optionText}>Sobre</Text>
+          <StyledText style={styles.optionText}>Sobre</StyledText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -51,7 +54,7 @@ export default function Modificacoes({ navigation }) {
           onPress={() => navigation.navigate('Ajuda')} 
         >
           <Ionicons name="help-circle-outline" size={20} color={primaryColor} style={styles.buttonIcon} />
-          <Text style={styles.optionText}>Ajuda</Text>
+          <StyledText style={styles.optionText}>Ajuda</StyledText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -59,7 +62,7 @@ export default function Modificacoes({ navigation }) {
           onPress={logout}
         >
           <Ionicons name="log-out-outline" size={20} color="#fff" style={styles.buttonIcon} />
-          <Text style={[styles.optionText, styles.logoutText]}>Sair</Text>
+          <StyledText style={[styles.optionText, styles.logoutText]}>Sair</StyledText>
         </TouchableOpacity>
       </View>
     </View>

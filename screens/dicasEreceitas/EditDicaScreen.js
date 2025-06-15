@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,69 +13,74 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import api from '../../src/services/api'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import StyledText from '../../src/components/StyledText';
 
 const { width, height } = Dimensions.get('window');
 const primaryColor = '#464193';
 
-export default function CreateDicaScreen({ navigation }) {
+export default function EditDicaScreen({ route, navigation }) {
+  const { dicaId } = route.params; 
   const [titulo, setTitulo] = useState('');
-  const [conteudo, setConteudo] = useState(''); 
-  const [loading, setLoading] = useState(false);
+  const [conteudo, setConteudo] = useState('');
+  const [loading, setLoading] = useState(true);
   const [userToken, setUserToken] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null); 
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchInitialData = async () => {
       try {
         const token = await AsyncStorage.getItem('userToken');
         const email = await AsyncStorage.getItem('@currentUserEmail');
-        const id = await AsyncStorage.getItem('@currentUserId');
-        setUserToken(token);
-        setUserEmail(email); 
+        const userId = await AsyncStorage.getItem('@currentUserId');
 
-        if (email && token && id) {
-          const response = await api.get(`/api/usuario/${id}`, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          const userId = response.data?.id || response.data?.user?.id; 
-          setCurrentUserId(userId);
+        setUserToken(token);
+        setUserEmail(email);
+        setCurrentUserId(userId);
+
+        if (!token || !dicaId) {
+          Alert.alert('Erro', 'Dados de autenticação ou ID da dica ausentes.');
+          navigation.goBack();
+          return;
+        }
+
+        // Busca os detalhes da dica a ser editada
+        const response = await api.get(`/api/dicas/${dicaId}`);
+        const dicaData = response.data.dica || response.data; 
+
+        if (dicaData) {
+          setTitulo(dicaData.titulo);
+          setConteudo(dicaData.conteudo);
         } else {
-          console.log('Email ou token não encontrados no AsyncStorage.');
-          Alert.alert('Erro de Autenticação', 'Você precisa estar logado para criar uma dica.');
-          navigation.navigate('Login'); // Redireciona para o login se não houver dados
+          Alert.alert('Erro', 'Dica não encontrada.');
+          navigation.goBack();
         }
       } catch (error) {
-        console.error('Erro ao buscar token, email ou ID do usuário:', error.response?.data || error.message);
-        Alert.alert('Erro de Autenticação', 'Não foi possível carregar seus dados de usuário. Por favor, tente logar novamente.');
-        navigation.navigate('Login'); // Redireciona para o login em caso de erro
+        console.error('Erro ao carregar dados da dica para edição:', error.response?.data || error.message);
+        Alert.alert('Erro', 'Não foi possível carregar os dados da dica para edição.');
+        navigation.goBack();
+      } finally {
+        setLoading(false);
       }
     };
-    fetchUserData();
-  }, []); 
-  const handleSubmitDica = async () => {
-    // Verifica se os dados essenciais do usuário estão disponíveis
-    if (!userToken || !userEmail || !currentUserId) {
-      Alert.alert('Erro', 'Você precisa estar logado para criar uma dica. Redirecionando para o login.');
-      navigation.navigate('Login');
-      setLoading(false); 
-      return;
-    }
+    fetchInitialData();
+  }, [dicaId, navigation]);
 
-    // Validação dos campos do formulário
+  const handleUpdateDica = async () => {
     if (!titulo || !conteudo) {
       Alert.alert('Erro', 'Por favor, preencha Título e Conteúdo da Dica.');
-      setLoading(false); 
       return;
+    }
+    if (!userToken || !currentUserId) {
+        Alert.alert('Erro', 'Você precisa estar logado para atualizar uma dica.');
+        navigation.navigate('Login');
+        return;
     }
 
     setLoading(true);
-    console.log('Loading ativado.');
-
     try {
       const payload = {
         titulo: titulo,
@@ -83,41 +88,37 @@ export default function CreateDicaScreen({ navigation }) {
         tema: "Moda",
         subtemas: ["subtema-moda-sustentavel"], 
         email: userEmail,
-        fotos: [], 
       };
-      console.log('Payload enviado para /api/dicas:', payload);
 
-      const response = await api.post('/api/dicas', payload, {
+ 
+      const response = await api.put(`/api/dicas/${dicaId}`, payload, {
         headers: {
-          Authorization: `Bearer ${userToken}`, 
+          Authorization: `Bearer ${userToken}`,
         },
       });
-      console.log('Resposta da API recebida. Status:', response.status);
 
-      if (response.status === 201) { 
-        Alert.alert('Sucesso', 'Dica criada com sucesso!');
-        navigation.goBack(); // Volta para a tela anterior
+      if (response.status === 200) { 
+        Alert.alert('Sucesso', 'Dica atualizada com sucesso!');
+        navigation.goBack(); 
       } else {
-        console.error('Erro na resposta da API ao criar dica (status não 201):', response.status, response.data);
-        Alert.alert('Erro', response.data?.message || `Erro ao criar dica. Status: ${response.status}`);
+        Alert.alert('Erro', response.data?.message || `Erro ao atualizar dica. Status: ${response.status}`);
       }
     } catch (error) {
-      console.error('Erro na requisição API ao criar dica:', error);
-      if (error.response) {
-        console.error('Erro de Resposta da API:', error.response.status, error.response.data);
-        Alert.alert('Erro', error.response.data?.message || `Erro do servidor: ${error.response.status}. Tente novamente.`);
-      } else if (error.request) {
-        console.error('Erro de Requisição (sem resposta):', error.request);
-        Alert.alert('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.');
-      } else {
-        console.error('Erro inesperado:', error.message);
-        Alert.alert('Erro', 'Ocorreu um erro inesperado. Tente novamente.');
-      }
+      console.error('Erro na requisição API ao atualizar dica:', error.response?.data || error.message);
+      Alert.alert('Erro', error.response?.data?.message || 'Não foi possível atualizar a dica. Tente novamente.');
     } finally {
       setLoading(false);
-      console.log('Loading desativado.');
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color={primaryColor} />
+        <StyledText style={styles.loadingText}>Carregando dados da dica...</StyledText>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -129,7 +130,7 @@ export default function CreateDicaScreen({ navigation }) {
           <Ionicons name="arrow-back" size={24} color={primaryColor} />
         </TouchableOpacity>
 
-        <StyledText style={styles.header}>Criar Nova Dica</StyledText>
+        <StyledText style={styles.header}>Editar Dica</StyledText>
 
         <View style={styles.formCard}>
           <TextInput
@@ -155,13 +156,13 @@ export default function CreateDicaScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.submitButton, loading && styles.disabledButton]}
-            onPress={handleSubmitDica}
+            onPress={handleUpdateDica}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <StyledText style={styles.submitButtonText}>Publicar Dica</StyledText>
+              <StyledText style={styles.submitButtonText}>Salvar Alterações</StyledText>
             )}
           </TouchableOpacity>
         </View>
@@ -174,6 +175,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f2f2f2',
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f2f2f2',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: width * 0.04,
+    color: primaryColor,
   },
   scrollContent: {
     flexGrow: 1,

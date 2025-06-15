@@ -3,26 +3,28 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import StyledText from '../../src/components/StyledText';
+
 export default function EscolhaDicasReceitas({ navigation }) {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Home')}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
-      <Text style={styles.header}>O que você quer ver?</Text>
+      <StyledText style={styles.header}>O que você quer ver?</StyledText>
 
       <TouchableOpacity
         style={styles.optionButton}
         onPress={() => navigation.navigate('Dicas')}
       >
-        <Text style={styles.optionText}>Dicas de Moda</Text>
+        <StyledText style={styles.optionText}>Dicas de Moda</StyledText>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.optionButton}
         onPress={() => navigation.navigate('Receitas')}
       >
-        <Text style={styles.optionText}>Receitas de Moda</Text>
+        <StyledText style={styles.optionText}>Receitas de Moda</StyledText>
       </TouchableOpacity>
     </View>
   );
@@ -31,7 +33,7 @@ export default function EscolhaDicasReceitas({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#473da1',
+    backgroundColor: '#464193',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import StyledText from '../../src/components/StyledText';
 
 const primaryColor = '#464193'; // Roxo base do logo
 
@@ -17,7 +18,7 @@ const ExpandableItem = ({ title, content }) => {
   return (
     <TouchableOpacity style={styles.faqItem} onPress={toggleExpand} activeOpacity={0.8}>
       <View style={styles.faqHeader}>
-        <Text style={styles.faqTitle}>{title}</Text>
+        <StyledText style={styles.faqTitle}>{title}</StyledText>
         <Ionicons
           name={expanded ? 'chevron-up-outline' : 'chevron-down-outline'}
           size={24}
@@ -26,7 +27,7 @@ const ExpandableItem = ({ title, content }) => {
       </View>
       {expanded && (
         <View style={styles.faqContentContainer}>
-          <Text style={styles.faqContent}>{content}</Text>
+          <StyledText style={styles.faqContent}>{content}</StyledText>
         </View>
       )}
     </TouchableOpacity>
@@ -68,18 +69,18 @@ export default function AjudaScreen({ navigation }) {
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <Text style={styles.header}>Ajuda</Text>
+      <StyledText style={styles.header}>Ajuda</StyledText>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Seção Guia de Árvores (Exemplo de item único, pode ser expandido) */}
-        <Text style={styles.sectionTitle}>Guia de Árvores</Text>
+        {/* Seção Guia de Árvores */}
+        <StyledText style={styles.sectionTitle}>Guia de Árvores</StyledText>
         <ExpandableItem
           title="Guia de Níveis de Engajamento"
           content="Sua árvore de perfil cresce à medida que você participa dos quizzes, adota dicas de moda sustentável e interage com o conteúdo do aplicativo. Cada nível desbloqueia uma nova fase da árvore, representando seu progresso na jornada da moda consciente."
         />
 
         {/* Seção Perguntas Frequentes */}
-        <Text style={styles.sectionTitle}>Perguntas Frequentes</Text>
+        <StyledText style={styles.sectionTitle}>Perguntas Frequentes</StyledText>
         {faqData.map((item) => (
           <ExpandableItem key={item.id} title={item.question} content={item.answer} />
         ))}

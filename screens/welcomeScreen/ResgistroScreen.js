@@ -11,13 +11,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
-  Image 
+  Image
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 import api from '../../src/services/api';
+import StyledText from '../../src/components/StyledText';
 
 const { height } = Dimensions.get('window');
 
@@ -31,7 +31,6 @@ export default function RegistroScreen({ navigation }) {
   const [showConfirmarSenha, setShowConfirmarSenha] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Lógica de validação e formatação permanece inalterada
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validateSenha = (senha) => senha.length >= 6;
 
@@ -48,6 +47,18 @@ export default function RegistroScreen({ navigation }) {
     }
   };
 
+  // Função para salvar os dados do usuário 
+  const saveUserData = async (emailToSave, nomeToSave, idToSave) => {
+    try {
+      await AsyncStorage.setItem(`@userData:${emailToSave}`, JSON.stringify({ nome: nomeToSave }));
+      await AsyncStorage.setItem('@currentUserEmail', emailToSave);
+      await AsyncStorage.setItem('@currentUserId', idToSave);
+      console.log('Dados do usuário salvos:', emailToSave, 'ID:', idToSave);
+    } catch (error) {
+      console.error('Erro ao salvar dados do usuário:', error);
+    }
+  };
+
   const handleRegistro = async () => {
     if (!nome || !email || !telefone || !senha || !confirmarSenha) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
@@ -57,10 +68,11 @@ export default function RegistroScreen({ navigation }) {
       Alert.alert('Erro', 'Por favor, insira um e-mail válido.');
       return;
     }
-    
-    const telefoneFormatadoParaAPI = telefone.replace(/\D/g, ''); 
-    
-    if (!/^\(\d{2}\)\s\d{4,5}-\d{4}$/.test(telefone)) { 
+
+    const telefoneFormatadoParaAPI = telefone.replace(/\D/g, '');
+
+    // Verificação do formato do telefone após a formatação para a API
+    if (!/^\(\d{2}\)\s\d{4,5}-\d{4}$/.test(telefone)) {
       Alert.alert('Erro', 'Por favor, insira um telefone válido no formato (XX) XXXXX-XXXX.');
       return;
     }
@@ -80,20 +92,25 @@ export default function RegistroScreen({ navigation }) {
         email,
         senha,
         tokens: 'random-token-' + Math.random().toString(36).substring(2),
-        telefone: telefoneFormatadoParaAPI, // Envia o telefone formatado para a API
+        telefone: telefoneFormatadoParaAPI,
         nivelConsciencia: 1,
         isMonitor: false
       });
 
+      if (response.status === 201) {
+        const userIdFromApi = response.data?.id || response.data?.user?.id;
 
-    await saveUserData(email, nome); 
+        await saveUserData(email, nome, userIdFromApi);
 
-      console.log('Conta criada com sucesso!');
-      Alert.alert(
-        'Sucesso!',
-        'Conta criada com sucesso!',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      );
+
+        Alert.alert(
+          'Sucesso!',
+          'Conta criada com sucesso! Por favor, faça login.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      } else {
+        Alert.alert('Erro', response.data?.message || `Erro ao registrar usuário. Status: ${response.status}`);
+      }
     } catch (error) {
       const erroServidor = error.response?.data?.errors?.[0];
       const status = error.response?.status;
@@ -107,18 +124,6 @@ export default function RegistroScreen({ navigation }) {
       setLoading(false);
     }
   };
-
-  // Função para salvar os dados do usuário
-  const saveUserData = async (email, nome) => {
-    try {
-        await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify({ nome }));
-        await AsyncStorage.setItem('@currentUserEmail', email);
-        console.log('Dados do usuário salvos:', email);
-    } catch (error) {
-        console.error('Erro ao salvar dados do usuário:', error);
-    }
-};
-
 
   return (
     <KeyboardAvoidingView
@@ -135,7 +140,7 @@ export default function RegistroScreen({ navigation }) {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Crie sua conta!</Text>
+          <StyledText style={styles.title}>Crie sua conta!</StyledText>
         </View>
 
         <View style={styles.formContainer}>
@@ -144,6 +149,7 @@ export default function RegistroScreen({ navigation }) {
             <TextInput
               placeholder="Nome"
               placeholderTextColor="#aaa"
+              fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={nome}
               onChangeText={setNome}
@@ -161,6 +167,7 @@ export default function RegistroScreen({ navigation }) {
             <TextInput
               placeholder="E-mail"
               placeholderTextColor="#aaa"
+              fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={email}
               onChangeText={setEmail}
@@ -180,6 +187,7 @@ export default function RegistroScreen({ navigation }) {
             <TextInput
               placeholder="Telefone"
               placeholderTextColor="#aaa"
+              fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={telefone}
               onChangeText={text => setTelefone(formatarTelefone(text))}
@@ -199,6 +207,7 @@ export default function RegistroScreen({ navigation }) {
             <TextInput
               placeholder="Senha"
               placeholderTextColor="#aaa"
+              fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={senha}
               onChangeText={setSenha}
@@ -220,6 +229,7 @@ export default function RegistroScreen({ navigation }) {
           <View style={styles.inputGroup}>
             <TextInput
               placeholder="Confirmar senha"
+              fontfamily="Poppins-Regular"
               placeholderTextColor="#aaa"
               style={styles.inputField}
               value={confirmarSenha}
@@ -248,7 +258,7 @@ export default function RegistroScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.registerButtonText}>Registrar</Text>
+              <StyledText style={styles.registerButtonText}>Registrar</StyledText>
             )}
           </TouchableOpacity>
 
@@ -256,7 +266,7 @@ export default function RegistroScreen({ navigation }) {
             onPress={() => navigation.navigate('Login')}
             disabled={loading}
           >
-            <Text style={styles.loginLink}>Já tem uma conta? Faça login</Text>
+            <StyledText style={styles.loginLink}>Já tem uma conta? Faça login</StyledText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -267,15 +277,20 @@ export default function RegistroScreen({ navigation }) {
 const primaryColor = '#473da1';
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: '#fff',
+
   },
+
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
+
   },
+
   topCurve: {
     backgroundColor: '#473da1',
     height: height * 0.35,
@@ -283,23 +298,25 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 200,
     borderBottomRightRadius: 200,
     alignItems: 'center',
-    
-    justifyContent: 'space-evenly', 
+    justifyContent: 'space-evenly',
     paddingTop: 30,
-    paddingBottom: 25, 
+    paddingBottom: 25,
   },
-  logo: { 
-    width: height * 0.15, 
+
+  logo: {
+    width: height * 0.15,
     height: height * 0.15,
     resizeMode: 'contain',
-    marginBottom: 5, 
+    marginBottom: 5,
   },
+
   title: {
     fontSize: height * 0.04,
     fontWeight: 'bold',
     color: '#fff',
-    marginTop: 5, 
+    marginTop: 5,
   },
+
   formContainer: {
     width: '90%',
     marginTop: -height * 0,
@@ -314,6 +331,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
+
   inputGroup: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -323,15 +341,18 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     width: '100%',
   },
+
   inputField: {
     flex: 1,
     height: height * 0.06,
     fontSize: height * 0.02,
     color: '#333',
   },
+
   inputIcon: {
     marginLeft: 8,
   },
+
   registerButton: {
     backgroundColor: primaryColor,
     paddingVertical: height * 0.02,
@@ -340,15 +361,18 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     width: '100%',
   },
+
   disabledButton: {
     backgroundColor: '#999',
     opacity: 0.7,
   },
+
   registerButtonText: {
     color: '#fff',
     fontSize: height * 0.022,
     fontWeight: 'bold',
   },
+
   loginLink: {
     textAlign: 'center',
     color: primaryColor,

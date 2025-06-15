@@ -9,39 +9,37 @@ import {
   Dimensions,
   Image,
   ActivityIndicator,
+  Linking, 
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../src/services/api';
 
+import StyledText from '../src/components/StyledText';
+
 const { width, height } = Dimensions.get('window');
+const primaryColor = '#464193';
+const secondaryColor = '#6A5ACD';
 
 export default function Home() {
   const navigation = useNavigation();
-  const [userName, setUserName] = useState('Usuário'); 
+  const [userName, setUserName] = useState('Usuário');
   const [dailyTip, setDailyTip] = useState(null);
   const [dailyRecipe, setDailyRecipe] = useState(null);
   const [loadingDailyContent, setLoadingDailyContent] = useState(true);
   const [isTipExpanded, setIsTipExpanded] = useState(false);
   const [isRecipeExpanded, setIsRecipeExpanded] = useState(false);
   const [userProfileImage, setUserProfileImage] = useState(null);
+  const [dailyRecipeThumbnailUrl, setDailyRecipeThumbnailUrl] = useState(null); 
 
-  const getRandomItem = (items) => {
-    const randomIndex = Math.floor(Math.random() * items.length);
-    return items[randomIndex];
-  };
-
-  // Regex para encontrar URLs do YouTube no texto do conteúdo
+  // Regex abrangente para encontrar URLs completas do YouTube (para extração do link do conteúdo)
   const youtubeUrlRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
 
-
-  // Função auxiliar para verificar se o título contém um número
   const hasNumberInTitle = (item) => {
     return item && item.titulo && /\d/.test(item.titulo);
   };
 
-  // Função para carregar a imagem de perfil do usuário
   const loadUserProfileImage = useCallback(async () => {
     try {
       const userEmail = await AsyncStorage.getItem('@currentUserEmail');
@@ -56,62 +54,92 @@ export default function Home() {
         setUserProfileImage(require('../assets/iconsLogin/carinhabranco.jpg'));
       }
     } catch (error) {
-      console.error('Erro ao carregar imagem de perfil do usuário na Home:', error);
+      console.error('[loadUserProfileImage] Erro ao carregar imagem de perfil do usuário na Home:', error);
       setUserProfileImage(require('../assets/iconsLogin/carinhabranco.jpg'));
     }
   }, []);
 
-  // Função para buscar o nome do usuário - ADICIONADO LOGS DE DEBUG
   const fetchUserName = useCallback(async () => {
-    console.log('--- Iniciando fetchUserName ---');
     try {
       const userEmail = await AsyncStorage.getItem('@currentUserEmail');
-      console.log('User Email from AsyncStorage:', userEmail);
+      const userToken = await AsyncStorage.getItem('userToken');
+      const userId = await AsyncStorage.getItem('@currentUserId');
 
+      let nameFoundLocally = false;
       if (userEmail) {
         const storedData = await AsyncStorage.getItem(`@userData:${userEmail}`);
-        console.log('Stored Data for userEmail:', storedData);
-
         if (storedData) {
           const parsedData = JSON.parse(storedData);
-          console.log('Parsed User Data:', parsedData);
-
-          if (parsedData.nome) {
+          if (parsedData.nome && parsedData.nome.trim() !== '') {
             setUserName(parsedData.nome);
-            console.log('UserName set to:', parsedData.nome);
-          } else {
-            console.log('Nome não encontrado em parsedData.');
+            nameFoundLocally = true;
           }
-        } else {
-          console.log('Nenhum dado encontrado para este userEmail no AsyncStorage.');
         }
-      } else {
-        console.log('userEmail não encontrado no AsyncStorage.');
-        setUserName('Usuário'); // Garante que o nome padrão seja exibido se o email não for encontrado
+      }
+
+      if (!nameFoundLocally && userEmail && userToken) {
+        try {
+          const response = await api.get(`/api/usuario/${userId}`, {
+            headers: { Authorization: `Bearer ${userToken}` }
+          });
+          const apiUserName = response.data?.user?.nome;
+          if (apiUserName && apiUserName.trim() !== '') {
+            setUserName(apiUserName);
+            await AsyncStorage.setItem(`@userData:${userEmail}`, JSON.stringify({ nome: apiUserName }));
+          } else {
+            setUserName('Usuário');
+          }
+        } catch (apiError) {
+          console.error('[fetchUserName] Erro ao buscar nome do usuário da API:', apiError.response?.data || apiError.message);
+          setUserName('Usuário');
+        }
+      } else if (!nameFoundLocally && (!userEmail || !userToken)) {
+        setUserName('Usuário');
       }
     } catch (error) {
-      console.error('Erro ao buscar nome do usuário:', error);
-      setUserName('Usuário'); // Fallback em caso de erro
+      console.error('[fetchUserName] Erro geral em fetchUserName:', error);
+      setUserName('Usuário');
     }
-    console.log('--- Finalizando fetchUserName ---');
   }, []);
 
-  // Função para extrair o ID do vídeo do YouTube do conteúdo e retornar a URL da thumbnail
-  const getYouTubeThumbnail = (content) => {
-    if (!content || typeof content !== 'string') {
-      console.log('getYouTubeThumbnail: Conteúdo de entrada inválido ou não é string.', content);
+  const getYouTubeThumbnail = useCallback((fullYouTubeUrl) => {
+    if (!fullYouTubeUrl || typeof fullYouTubeUrl !== 'string') {
       return null;
     }
-    const match = content.match(youtubeUrlRegex);
-    const videoId = match && match[2] ? match[2] : null;
-    
+    const match = fullYouTubeUrl.match(youtubeUrlRegex);
+    const videoId = (match && match[2]) ? match[2] : null; 
+
     if (videoId) {
       return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     }
     return null;
+  }, []);
+
+  const openYouTubeLink = useCallback((fullYouTubeUrl) => {
+    if (fullYouTubeUrl) {
+      Linking.openURL(fullYouTubeUrl).catch(err => Alert.alert('Erro', 'Não foi possível abrir o link do YouTube.'));
+    } else {
+      Alert.alert('Erro', 'Nenhum link do YouTube válido encontrado para abrir.');
+    }
+  }, []);
+
+  const extractYouTubeUrlAndCleanContent = (content) => {
+    if (!content || typeof content !== 'string') {
+      return { cleanedContent: '', youtubeLink: null };
+    }
+    const match = content.match(youtubeUrlRegex);
+    const youtubeLink = match ? match[1] : null; 
+    const globalYoutubeUrlRegex = new RegExp(youtubeUrlRegex.source, 'gi'); 
+    const cleanedContent = content.replace(globalYoutubeUrlRegex, '').trim(); 
+    return { cleanedContent, youtubeLink };
   };
 
-  // Função para buscar a dica e a receita do dia
+  const getRandomItem = (array) => {
+    if (!array || array.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * array.length);
+    return array[randomIndex];
+  };
+
   const fetchDailyContent = useCallback(async () => {
     setLoadingDailyContent(true);
     const today = new Date().toISOString().slice(0, 10);
@@ -124,86 +152,60 @@ export default function Home() {
     let savedDailyTipTitle = await AsyncStorage.getItem('@dailyTipTitle');
     let savedDailyRecipeTitle = await AsyncStorage.getItem('@dailyRecipeTitle');
 
-
     const oldTipId = await AsyncStorage.getItem('@dailyTipId');
     const oldRecipeId = await AsyncStorage.getItem('@dailyRecipeId');
     if (oldTipId || oldRecipeId) {
-        console.log('Detectando IDs antigos. Removendo-os...');
-        await AsyncStorage.removeItem('@dailyTipId');
-        await AsyncStorage.removeItem('@dailyRecipeId');
+      await AsyncStorage.removeItem('@dailyTipId');
+      await AsyncStorage.removeItem('@dailyRecipeId');
     }
 
     let allTipsFromApi = [];
     let allRecipesFromApi = [];
 
     try {
-        const [tipsResponse, recipesResponse] = await Promise.all([
-            api.get('/api/Moda/dicas').catch(err => { console.error('Erro ao buscar todas as dicas:', err); return null; }),
-            api.get('/api/Moda/receitas').catch(err => { console.error('Erro ao buscar todas as receitas:', err); return null; }),
-        ]);
+      const [tipsResponse, recipesResponse] = await Promise.all([
+        api.get('/api/Moda/dicas').catch(err => { console.error('[fetchDailyContent] Erro ao buscar todas as dicas:', err); return null; }),
+        api.get('/api/Moda/receitas').catch(err => { console.error('[fetchDailyContent] Erro ao buscar todas as receitas:', err); return null; }),
+      ]);
 
-        allTipsFromApi = tipsResponse?.data?.dicas || [];
-        allRecipesFromApi = (recipesResponse?.data && recipesResponse.data.receitas) ? recipesResponse.data.receitas : (recipesResponse?.data || []);
+      allTipsFromApi = tipsResponse?.data?.dicas || [];
+      allRecipesFromApi = (recipesResponse?.data && recipesResponse.data.receitas) ? recipesResponse.data.receitas : (recipesResponse?.data || []);
 
-        // Filtra receitas e dicas que têm um número no título
-        const availableTips = allTipsFromApi.filter(hasNumberInTitle);
-        // Filtra receitas que têm um número no título E um link de YouTube válido no conteúdo
-        const availableRecipes = allRecipesFromApi.filter(recipe => 
-            hasNumberInTitle(recipe) && getYouTubeThumbnail(recipe.conteudo) // Verifica se o conteúdo tem um link válido
-        );
-        console.log('Dicas filtradas com número no título:', availableTips.length);
-        console.log('Receitas filtradas com número no título e URL válida no conteúdo:', availableRecipes.length);
+      const availableTips = allTipsFromApi.filter(hasNumberInTitle);
+      const availableRecipes = allRecipesFromApi.filter(recipe => {
+        const { youtubeLink } = extractYouTubeUrlAndCleanContent(recipe.conteudo);
+        return hasNumberInTitle(recipe) && youtubeLink && getYouTubeThumbnail(youtubeLink); 
+      });
 
-
-        if (lastFetchDate === today && savedDailyTipTitle && savedDailyRecipeTitle) {
-            console.log('Conteúdo diário já salvo para hoje. Tentando carregar por título...');
-            
-            tipToSet = availableTips.find(tip => tip.titulo === savedDailyTipTitle);
-            recipeToSet = availableRecipes.find(recipe => recipe.titulo === savedDailyRecipeTitle);
-
-            if (tipToSet) {
-                console.log('Dica salva carregada por título:', tipToSet.titulo);
-            } else {
-                console.warn('Dica salva por título não encontrada. Marcando para nova seleção.');
-                needsNewSelection = true;
-            }
-
-            if (recipeToSet) {
-                console.log('Receita salva carregada por título:', recipeToSet.titulo);
-            } else {
-                console.warn('Receita salva por título não encontrada. Marcando para nova seleção.');
-                needsNewSelection = true;
-            }
-        } else {
-            console.log('Data mudou ou títulos salvos ausentes. Marcando para nova seleção.');
-            needsNewSelection = true;
+      if (lastFetchDate === today && savedDailyTipTitle && savedDailyRecipeTitle) {
+        tipToSet = availableTips.find(tip => tip.titulo === savedDailyTipTitle);
+        recipeToSet = availableRecipes.find(recipe => recipe.titulo === savedDailyRecipeTitle);
+        if (!tipToSet || !recipeToSet) {
+          needsNewSelection = true;
         }
+      } else {
+        needsNewSelection = true;
+      }
 
-        if (needsNewSelection || !tipToSet || !recipeToSet) {
-            console.log('Realizando nova seleção aleatória de conteúdo diário...');
-            tipToSet = getRandomItem(availableTips);
-            recipeToSet = getRandomItem(availableRecipes);
+      if (needsNewSelection || !tipToSet || !recipeToSet) {
+        tipToSet = getRandomItem(availableTips);
+        recipeToSet = getRandomItem(availableRecipes);
 
-            // Salva a nova seleção para hoje
-            await AsyncStorage.setItem('@lastDailyContentFetchDate', today);
-            if (tipToSet) {
-                await AsyncStorage.setItem('@dailyTipTitle', tipToSet.titulo);
-            } else {
-                await AsyncStorage.removeItem('@dailyTipTitle');
-            }
-            if (recipeToSet) {
-                await AsyncStorage.setItem('@dailyRecipeTitle', recipeToSet.titulo);
-            } else {
-                await AsyncStorage.removeItem('@dailyRecipeTitle');
-            }
-            console.log('Novo conteúdo diário definido e salvo no AsyncStorage.');
-
+        await AsyncStorage.setItem('@lastDailyContentFetchDate', today);
+        if (tipToSet) {
+          await AsyncStorage.setItem('@dailyTipTitle', tipToSet.titulo);
         } else {
-            console.log('Conteúdo diário carregado com sucesso do cache/salvo para hoje. Nenhuma nova busca completa necessária.');
+          await AsyncStorage.removeItem('@dailyTipTitle');
         }
+        if (recipeToSet) {
+          await AsyncStorage.setItem('@dailyRecipeTitle', recipeToSet.titulo);
+        } else {
+          await AsyncStorage.removeItem('@dailyRecipeTitle');
+        }
+      }
 
     } catch (error) {
-      console.error('Erro geral ao buscar ou carregar conteúdo diário:', error);
+      console.error('[fetchDailyContent] Erro geral ao buscar ou carregar conteúdo diário:', error);
       Alert.alert('Erro', 'Não foi possível carregar o conteúdo do dia. Tente novamente mais tarde.');
       tipToSet = null;
       recipeToSet = null;
@@ -214,23 +216,29 @@ export default function Home() {
       setIsRecipeExpanded(false);
       setLoadingDailyContent(false);
     }
-  }, []);
+  }, [getYouTubeThumbnail]);
 
+  // Efeito para processar a URL da thumbnail quando dailyRecipe é atualizado
+  useEffect(() => {
+    if (dailyRecipe && dailyRecipe.conteudo) {
+      const { youtubeLink } = extractYouTubeUrlAndCleanContent(dailyRecipe.conteudo);
+      const url = youtubeLink ? getYouTubeThumbnail(youtubeLink) : null;
+      setDailyRecipeThumbnailUrl(url);
+    } else {
+      setDailyRecipeThumbnailUrl(null); // Limpa se não houver receita
+    }
+  }, [dailyRecipe, getYouTubeThumbnail]);
   useFocusEffect(
     useCallback(() => {
-      console.log('HomeScreen: useFocusEffect acionado.');
       fetchUserName();
       loadUserProfileImage();
       fetchDailyContent();
-      return () => {
-        console.log('HomeScreen: useFocusEffect cleanup.');
-      };
+      return () => {};
     }, [fetchUserName, loadUserProfileImage, fetchDailyContent])
   );
 
   return (
     <View style={styles.container}>
-      {/* Header com boas-vindas */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.profileButton} onPress={() => navigation.navigate('Perfil')}>
           {userProfileImage ? (
@@ -242,29 +250,28 @@ export default function Home() {
             <Ionicons name="person-circle-outline" size={width * 0.12} color="#fff" />
           )}
         </TouchableOpacity>
-        <Text style={styles.welcomeText}>Olá, {userName}!</Text>
+        <StyledText style={styles.welcomeText}>Olá, {userName}!</StyledText>
         <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('ConfiguracoesStack', { screen: 'ConfiguracoesMain' })}>
           <Ionicons name="settings-outline" size={width * 0.08} color="#fff" />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        {/* Seção "Dica do Dia" */}
-        <Text style={styles.sectionTitle}>Dica do Dia</Text>
+        <StyledText style={styles.sectionTitle}>Dica do Dia</StyledText>
         {loadingDailyContent ? (
           <ActivityIndicator size="small" color="#464193" style={styles.loadingIndicator} />
         ) : dailyTip ? (
           <TouchableOpacity style={styles.dailyCard} onPress={() => setIsTipExpanded(!isTipExpanded)} activeOpacity={0.8}>
-            <Text style={styles.dailyCardTitle}>{dailyTip.titulo}</Text>
-            <Text style={styles.dailyCardContent} numberOfLines={isTipExpanded ? 0 : 3}>
+            <StyledText style={styles.dailyCardTitle}>{dailyTip.titulo}</StyledText>
+            <StyledText style={styles.dailyCardContent} numberOfLines={isTipExpanded ? 0 : 3}>
               {dailyTip.conteudo}
-            </Text>
+            </StyledText>
             {isTipExpanded && (
               <TouchableOpacity
                 style={styles.viewMoreButton}
-                onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'DicasDeModa' })}
+                onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Dicas' })}
               >
-                <Text style={styles.viewMoreButtonText}>Ver todas as Dicas</Text>
+                <StyledText style={styles.viewMoreButtonText}>Ver todas as Dicas</StyledText>
               </TouchableOpacity>
             )}
             <Ionicons
@@ -275,40 +282,52 @@ export default function Home() {
             />
           </TouchableOpacity>
         ) : (
-          <Text style={styles.noContentText}>Nenhuma dica disponível hoje.</Text>
+          <StyledText style={styles.noContentText}>Nenhuma dica disponível hoje.</StyledText>
         )}
 
-        {/* Seção "Receita do Dia" */}
-        <Text style={styles.sectionTitle}>Receita do Dia</Text>
+        <StyledText style={styles.sectionTitle}>Receita do Dia</StyledText>
         {loadingDailyContent ? (
           <ActivityIndicator size="small" color="#464193" style={styles.loadingIndicator} />
         ) : dailyRecipe ? (
           <TouchableOpacity style={styles.dailyCard} onPress={() => setIsRecipeExpanded(!isRecipeExpanded)} activeOpacity={0.8}>
-            {/* Renderiza a imagem da thumbnail do YouTube se o link for encontrado no conteúdo */}
-            {getYouTubeThumbnail(dailyRecipe.conteudo) ? (
+            {dailyRecipeThumbnailUrl ? (
               <Image
-                source={{ uri: getYouTubeThumbnail(dailyRecipe.conteudo) }}
+                source={{ uri: dailyRecipeThumbnailUrl }}
                 style={styles.dailyCardImage}
                 resizeMode="cover"
-                onError={(e) => console.log('Erro ao carregar imagem da receita:', e.nativeEvent.error)}
+                onError={(e) => {
+                  console.error('[dailyCardImage] Erro ao carregar imagem da receita:', e.nativeEvent.error, 'URL:', dailyRecipeThumbnailUrl);
+                  Alert.alert('Erro de Imagem', 'Não foi possível carregar a miniatura do vídeo.');
+                  setDailyRecipeThumbnailUrl(null); // Define como null para mostrar o placeholder
+                }}
               />
-            ) : ( // Placeholder se não houver thumbnail ou link
-              <Image
-                source={{ uri: `https://placehold.co/${width * 0.8}x${height * 0.18}/cccccc/333333?text=Video+Nao+Disponivel` }}
-                style={styles.dailyCardImage}
-                resizeMode="cover"
-              />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="videocam-off-outline" size={50} color="#ccc" />
+                <StyledText style={styles.imagePlaceholderText}>Vídeo Não Disponível</StyledText>
+              </View>
             )}
-            <Text style={styles.dailyCardTitle}>{dailyRecipe.titulo}</Text>
-            <Text style={styles.dailyCardContent} numberOfLines={isRecipeExpanded ? 0 : 3}>
-              {dailyRecipe.conteudo}
-            </Text>
+            <StyledText style={styles.dailyCardTitle}>{dailyRecipe.titulo}</StyledText>
+            <StyledText style={styles.dailyCardContent} numberOfLines={isRecipeExpanded ? 0 : 3}>
+              {extractYouTubeUrlAndCleanContent(dailyRecipe.conteudo).cleanedContent}
+            </StyledText>
+            {isRecipeExpanded && extractYouTubeUrlAndCleanContent(dailyRecipe.conteudo).youtubeLink && (
+              <StyledText style={styles.info}>
+                <StyledText style={styles.label}>Vídeo: </StyledText>
+                <StyledText
+                  style={styles.youtubeLink}
+                  onPress={() => openYouTubeLink(extractYouTubeUrlAndCleanContent(dailyRecipe.conteudo).youtubeLink)}
+                >
+                  {extractYouTubeUrlAndCleanContent(dailyRecipe.conteudo).youtubeLink.length > 50 ? `${extractYouTubeUrlAndCleanContent(dailyRecipe.conteudo).youtubeLink.substring(0, 50)}...` : extractYouTubeUrlAndCleanContent(dailyRecipe.conteudo).youtubeLink}
+                </StyledText>
+              </StyledText>
+            )}
             {isRecipeExpanded && (
               <TouchableOpacity
                 style={styles.viewMoreButton}
-                onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'ReceitasDeModa' })}
+                onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Receitas' })}
               >
-                <Text style={styles.viewMoreButtonText}>Ver todas as Receitas</Text>
+                <StyledText style={styles.viewMoreButtonText}>Ver todas as Receitas</StyledText>
               </TouchableOpacity>
             )}
             <Ionicons
@@ -319,17 +338,16 @@ export default function Home() {
             />
           </TouchableOpacity>
         ) : (
-          <Text style={styles.noContentText}>Nenhuma receita disponível hoje.</Text>
+          <StyledText style={styles.noContentText}>Nenhuma receita disponível hoje.</StyledText>
         )}
 
-        {/* Botões de Navegação Principais */}
         <View style={styles.buttonGrid}>
           <TouchableOpacity
             style={styles.navButton}
             onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Receitas' })}
           >
             <Ionicons name="book-outline" size={width * 0.1} color="#fff" />
-            <Text style={styles.navButtonText}>Receitas de Moda</Text>
+            <StyledText style={styles.navButtonText}>Receitas de Moda</StyledText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -337,32 +355,29 @@ export default function Home() {
             onPress={() => navigation.navigate('Dicas/Receitas', { screen: 'Dicas' })}
           >
             <Ionicons name="bulb-outline" size={width * 0.1} color="#fff" />
-            <Text style={styles.navButtonText}>Dicas de Moda</Text>
+            <StyledText style={styles.navButtonText}>Dicas de Moda</StyledText>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() =>  navigation.navigate('OutrosStack', { screen: 'quiz' })}
+            onPress={() => navigation.navigate('OutrosStack', { screen: 'quiz' })}
           >
             <Ionicons name="game-controller-outline" size={width * 0.1} color="#fff" />
-            <Text style={styles.navButtonText}>Quiz</Text>
+            <StyledText style={styles.navButtonText}>Quiz</StyledText>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => navigation.navigate('ConfiguracoesStack', {screen: 'Sobre'})}
+            onPress={() => navigation.navigate('ConfiguracoesStack', { screen: 'Sobre' })}
           >
             <Ionicons name="information-circle-outline" size={width * 0.1} color="#fff" />
-            <Text style={styles.navButtonText}>Sobre</Text>
+            <StyledText style={styles.navButtonText}>Sobre</StyledText>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
   );
 }
-
-const primaryColor = '#464193';
-const secondaryColor = '#6A5ACD';
 
 const styles = StyleSheet.create({
   container: {
@@ -397,7 +412,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   welcomeText: {
-    fontSize: width * 0.06,
+    fontSize: width * 0.05,
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
@@ -428,6 +443,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    alignItems: 'center',
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: height * 0.18,
+    borderRadius: 10,
+    marginBottom: height * 0.015,
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   dailyCardTitle: {
@@ -502,5 +526,24 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: width * 0.035,
     fontWeight: 'bold',
+  },
+  info: {
+    fontSize: width * 0.038,
+    color: '#333',
+    marginBottom: height * 0.005,
+    textAlign: 'center',
+  },
+  label: {
+    fontWeight: 'bold',
+    color: primaryColor,
+  },
+  youtubeLink: {
+    color: '#0000EE',
+    textDecorationLine: 'underline',
+  },
+  imagePlaceholderText: {
+    color: '#888',
+    marginTop: 5,
+    fontSize: width * 0.035,
   },
 });

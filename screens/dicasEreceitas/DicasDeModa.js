@@ -15,8 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import StyledText from '../../src/components/StyledText';
+
 const { width, height } = Dimensions.get('window');
-const primaryColor = '#473da1'; 
+const primaryColor = '#464193'; 
 const dangerColor = '#D9534F'; 
 
 export default function DicasDeModa({ navigation }) {
@@ -27,6 +29,7 @@ export default function DicasDeModa({ navigation }) {
   const [currentUserId, setCurrentUserId] = useState(null); 
   const [userToken, setUserToken] = useState(null);
   const [userEmail, setUserEmail] = useState(null); 
+  const [isCurrentUserMonitor, setIsCurrentUserMonitor] = useState(false); 
 
   // Função para extrair URLs de um texto
   const extractAndOpenURL = (text) => {
@@ -39,31 +42,36 @@ export default function DicasDeModa({ navigation }) {
     return false;
   };
 
-  // Função para buscar o ID, email e token do usuário logado
+  // Função para buscar o ID, email e token do usuário logado e o status de monitor
   const fetchUserData = useCallback(async () => {
     try {
       const email = await AsyncStorage.getItem('@currentUserEmail');
       const token = await AsyncStorage.getItem('userToken');
+      const id = await AsyncStorage.getItem('@currentUserId'); 
+      
       setUserToken(token);
-      setUserEmail(email); // Armazena o email também
+      setUserEmail(email); 
 
-      if (email && token) {
-        const response = await api.get(`/api/usuario/${email}`, {
+      if (id && token) {
+        const response = await api.get(`/api/usuario/${id}`, { 
             headers: { Authorization: `Bearer ${token}` }
         });
-
-
-        const userId = response.data?.id || response.data?.user?.id; 
-        setCurrentUserId(userId);
-        console.log("Usuário logado ID (fetchUserData):", userId);
-        console.log("Usuário logado Email (fetchUserData):", email);
+        
+        const fetchedUserId = response.data?.id || response.data?.user?.id; 
+        const isMonitor = response.data?.is_monitor || response.data?.user?.is_monitor || false; // Assume false se não existir
+        
+        setCurrentUserId(fetchedUserId);
+        setIsCurrentUserMonitor(isMonitor); 
       } else {
         setCurrentUserId(null);
-        console.log("Nenhum usuário logado ou token ausente.");
+        setIsCurrentUserMonitor(false); 
+        console.log("Nenhum usuário logado ou token/ID ausente.");
       }
+
     } catch (error) {
       console.error('Erro ao buscar dados do usuário para dicas:', error.response?.data || error.message);
       setCurrentUserId(null);
+      setIsCurrentUserMonitor(false); // Garante que o status seja false em caso de erro
     }
   }, []);
 
@@ -156,16 +164,17 @@ export default function DicasDeModa({ navigation }) {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const handleDeleteDica = async (dicaId, dicaUsuarioId) => { // Agora recebe o usuarioId da dica
+  const handleDeleteDica = async (dicaId, dicaUsuarioId) => { 
     if (!userToken || !userEmail) {
       Alert.alert('Erro', 'Você precisa estar logado para deletar dicas.');
       navigation.navigate('Login');
       return;
     }
 
-    if (!dicaUsuarioId || currentUserId !== dicaUsuarioId) {
-      Alert.alert('Ação Não Permitida', 'Você só pode deletar dicas que você mesmo criou.');
-      console.log(`Tentativa de deletar: currentUserId = ${currentUserId}, dicaUsuarioId = ${dicaUsuarioId}`);
+    // Lógica de exclusão: permite deletar se for o criador OU se for um monitor
+    if (currentUserId !== dicaUsuarioId && !isCurrentUserMonitor) {
+      Alert.alert('Ação Não Permitida', 'Você só pode deletar dicas que você mesmo criou ou se for um monitor.');
+      console.log(`Tentativa de deletar: currentUserId = ${currentUserId}, dicaUsuarioId = ${dicaUsuarioId}, isCurrentUserMonitor = ${isCurrentUserMonitor}`);
       return;
     }
 
@@ -183,6 +192,7 @@ export default function DicasDeModa({ navigation }) {
                 headers: {
                   'Authorization': `Bearer ${userToken}`,
                 },
+                // Se a API exige o email do criador no corpo da requisição DELETE
                 data: {
                   email: userEmail, 
                 }
@@ -207,13 +217,18 @@ export default function DicasDeModa({ navigation }) {
     );
   };
 
+  // Nova função para lidar com a edição de dicas
+  const handleEditDica = (dicaId) => {
+    navigation.navigate('EditDicas', { dicaId: dicaId }); // Navega para a tela de edição
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('EscolhaDicasReceitas')}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <Text style={styles.header}>Dicas de Moda</Text>
+      <StyledText style={styles.header}>Dicas de Moda</StyledText>
 
       {loading ? (
         <ActivityIndicator size="large" color="#fff" style={{ marginTop: 40 }} />
@@ -234,22 +249,38 @@ export default function DicasDeModa({ navigation }) {
               const isExpanded = expandedId === item.id;
               const hasSubtemaAssunto = item.subtemas && item.subtemas.length > 0 && item.subtemas[0].assunto;
               const subtemaAssunto = hasSubtemaAssunto ? item.subtemas[0].assunto : null;
+              
+              // Verifica se o usuário logado é o criador da dica
               const isOwner = currentUserId && item.usuarioId && currentUserId === item.usuarioId;
-
-              console.log(`Dica ID: ${item.id}, Título: ${item.titulo}`);
-              console.log(`  usuarioId da Dica: ${item.usuarioId}, currentUserId (logado): ${currentUserId}`);
-              console.log(`  É o criador (isOwner)? ${isOwner}`);
-
+              // Permite modificar se for o criador OU se for um monitor
+              const canModify = isOwner || isCurrentUserMonitor;
 
               return (
                 <TouchableOpacity
                   key={item.id}
                   style={styles.card}
-                  onPress={() => toggleExpand(item.id)} 
+                  onPress={() => toggleExpand(item.id)} // Expande/recolhe o card
                   activeOpacity={0.8}
                 >
                   <View style={styles.cardHeader}>
-                    <Text style={styles.title}>{item.titulo}</Text>
+                    <StyledText style={styles.title}>{item.titulo}</StyledText>
+                    {/* Botões de Ação (Editar e Excluir) */}
+                    {canModify && ( 
+                      <View style={styles.actionButtonsContainer}>
+                        <TouchableOpacity
+                          onPress={() => handleEditDica(item.id)}
+                          style={styles.editButton}
+                        >
+                          <Ionicons name="create-outline" size={20} color="#464193" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteDica(item.id, item.usuarioId)}
+                          style={styles.deleteButton}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="red" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
                     {/* Ícone de expansão */}
                     <Ionicons
                       name={isExpanded ? 'chevron-up' : 'chevron-down'}
@@ -260,41 +291,24 @@ export default function DicasDeModa({ navigation }) {
 
                   {isExpanded && (
                     <View style={styles.expandedContent}>
-                      <Text style={styles.description}>{item.conteudo}</Text>
+                      <StyledText style={styles.description}>{item.conteudo}</StyledText>
 
                       {hasSubtemaAssunto && (
-                        <Text style={styles.info}>
-                          <Text style={styles.label}>Informações Adicionais: </Text>
+                        <StyledText style={styles.info}>
+                          <StyledText style={styles.label}>Informações Adicionais: </StyledText>
                           {subtemaAssunto.includes('http') ? (
-                            <Text style={styles.linkText} onPress={() => extractAndOpenURL(subtemaAssunto)}>
+                            <StyledText style={styles.linkText} onPress={() => extractAndOpenURL(subtemaAssunto)}>
                               {subtemaAssunto}
-                            </Text>
+                            </StyledText>
                           ) : (
                             subtemaAssunto
                           )}
-                        </Text>
+                        </StyledText>
                       )}
 
-                      {item.isCreatedBySpecialist && (
-                        <Text style={styles.specialistBadge}>Dica de especialista</Text>
-                      )}
-                      {!item.isCreatedBySpecialist && item.isverify && !item.verifyBy && (
-                        <Text style={styles.verifiedBadge}>Verificado</Text>
-                      )}
-
-                      {/* Botão de Excluir - Visível apenas se o usuário for o criador */}
-                      {isOwner && (
-                        <TouchableOpacity
-                          style={[styles.deleteButton, loading && styles.disabledButton]}
-                          onPress={() => handleDeleteDica(item.id, item.usuarioId)} // Passa ID da dica e usuarioId do criador
-                          disabled={loading}
-                        >
-                          {loading ? (
-                            <ActivityIndicator color="#fff" />
-                          ) : (
-                            <Text style={styles.deleteButtonText}>Excluir Dica</Text>
-                          )}
-                        </TouchableOpacity>
+                      {/* Exibição do badge "Verificado" */}
+                      {item.isverify && ( 
+                        <StyledText style={styles.verifiedBadge}>Verificado</StyledText>
                       )}
                     </View>
                   )}
@@ -302,17 +316,20 @@ export default function DicasDeModa({ navigation }) {
               );
             })
           ) : (
-            <Text style={styles.emptyMessage}>Nenhuma dica encontrada</Text>
+            <StyledText style={styles.emptyMessage}>Nenhuma dica encontrada</StyledText>
           )}
         </ScrollView>
       )}
 
-      <TouchableOpacity
-        style={styles.createButton}
-        onPress={() => navigation.navigate('CreateDicas')} 
-      >
-        <Ionicons name="add" size={30} color="#fff" />
-      </TouchableOpacity>
+      {/* O botão de criar dicas só aparece para monitores */}
+      {isCurrentUserMonitor && (
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => navigation.navigate('CreateDicas')} 
+        >
+          <Ionicons name="add" size={30} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -356,7 +373,7 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-between', 
     alignItems: 'center',
   },
   title: {
@@ -365,6 +382,18 @@ const styles = StyleSheet.create({
     color: '#464193',
     marginRight: 10,
     flexShrink: 1,
+  },
+  actionButtonsContainer: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto', 
+  },
+  editButton: {
+    padding: 5,
+    marginRight: 10, 
+  },
+  deleteButton: {
+    padding: 5,
   },
   expandedContent: {
     marginTop: 10,
@@ -431,16 +460,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
-  },
-  deleteButton: { 
-    backgroundColor: dangerColor,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 15,
-    alignSelf: 'flex-end', 
   },
   disabledButton: { 
     opacity: 0.7,

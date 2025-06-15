@@ -17,6 +17,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../src/services/api';
 import * as FileSystem from 'expo-file-system';
 
+import StyledText from '../../src/components/StyledText';
+
 // Importe das imagens de árvore
 import arvore0 from '../../assets/IconsLevel/arvore0.png';
 import arvore1 from '../../assets/IconsLevel/arvore1.png';
@@ -105,6 +107,7 @@ export default function Perfil() {
       setLoading(true);
       const email = await AsyncStorage.getItem('@currentUserEmail');
       const token = await AsyncStorage.getItem('userToken');
+      const id = await AsyncStorage.getItem('@currentUserId');
 
       if (!email || !token) {
         throw new Error('Nenhum email ou token encontrado');
@@ -129,13 +132,11 @@ export default function Perfil() {
         setQuizScore(0);
       }
 
-      // Faz a requisição à API com o token
-      const response = await api.get(`/api/usuario/${email}`, {
+      const response = await api.get(`/api/usuario/${id}`, {
           headers: {
               'Authorization': `Bearer ${token}`
           }
       });
-      // CORREÇÃO AQUI: Acessa user.nome conforme o log da API
       if (response.data?.user?.nome) { 
         setUserName(response.data.user.nome);
         await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify({
@@ -250,7 +251,7 @@ export default function Perfil() {
         </TouchableOpacity>
 
         <View style={styles.profileContent}>
-          <Text style={styles.headerTitle}>Perfil</Text>
+          <StyledText style={styles.headerTitle}>Perfil</StyledText>
           <TouchableOpacity onPress={pickImage}>
             <View style={styles.profileImageContainer}>
               <Image
@@ -266,24 +267,24 @@ export default function Perfil() {
             </View>
           </TouchableOpacity>
           {userName ? (
-          <Text style={styles.userNameInBottom}>{userName}</Text>
+          <StyledText style={styles.userNameInBottom}>{userName}</StyledText>
         ) : (
-          <Text style={styles.userNameInBottom}>Usuário BrechóBox</Text>
+          <StyledText style={styles.userNameInBottom}>Usuário BrechóBox</StyledText>
         )}    
         </View>
       </View>
 
       <View style={styles.bottomContainer}>
-       <Text style={styles.quizTitle}>Realize o Quiz para saber seu Titulo!!</Text>
+       <StyledText style={styles.quizTitle}>Realize o Quiz para saber seu Titulo!!</StyledText>
 
-      <Text style={[styles.scoreTitleBadge, currentScoreTitleStyle]}>{currentScoreTitle}</Text>
+      <StyledText style={[styles.scoreTitleBadge, currentScoreTitleStyle]}>{currentScoreTitle}</StyledText>
 
         <TouchableOpacity
             style={styles.quizButton}
             onPress={() => navigation.navigate('OutrosStack', { screen: 'quiz' })}
         >
             <Ionicons name="bulb-outline" size={24} color={'#fff'} />
-            <Text style={styles.quizButtonText}>Jogar Quiz</Text>
+            <StyledText style={styles.quizButtonText}>Jogar Quiz</StyledText>
         </TouchableOpacity>
       </View>
     </View>
@@ -299,14 +300,15 @@ const styles = StyleSheet.create({
   },
   quizTitle: {
     color: primaryColor,
-    fontSize: width * 0.04,
+    fontSize: width * 0.05,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginTop: height * 0.05,
   },
 
   topCurve: {
-    backgroundColor: '#473da1',
-    height: height * 0.7,
+    backgroundColor: '#464193',
+    height: height * 0.6,
     borderBottomLeftRadius: width * 0.5,
     borderBottomRightRadius: width * 0.5,
     alignItems: 'center',

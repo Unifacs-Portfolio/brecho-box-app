@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { quizData as localQuizData } from '../utils/quizdata'; 
 
+import StyledText from '../src/components/StyledText';
+
 // Importe das imagens de árvore
 import arvore0 from '../assets/IconsLevel/arvore0.png';
 import arvore1 from '../assets/IconsLevel/arvore1.png';
@@ -147,7 +149,7 @@ export default function Quiz({ navigation }) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={primaryColor} />
-        <Text style={styles.loadingText}>Carregando Quiz...</Text>
+        <StyledText style={styles.loadingText}>Carregando Quiz...</StyledText>
       </View>
     );
   }
@@ -158,18 +160,18 @@ export default function Quiz({ navigation }) {
     const treeImageSource = treeIcons[Math.min(finalScore, treeIcons.length - 1)];
     return (
       <View style={styles.resultContainer}>
-        <Text style={styles.quizTitle}>QUIZ BRECHÓ BOX</Text>
-        <Text style={styles.resultHeader}>SEU RESULTADO</Text>
-        <Text style={styles.scoreText}>{finalScore}/{questions.length}</Text>
+        <StyledText style={styles.quizTitle}>QUIZ BRECHÓ BOX</StyledText>
+        <StyledText style={styles.resultHeader}>SEU RESULTADO</StyledText>
+        <StyledText style={styles.scoreText}>{finalScore}/{questions.length}</StyledText>
         <Image source={treeImageSource} style={styles.resultTreeImage} />
-        <Text style={styles.correctAnswersTitle}>Respostas Corretas:</Text>
+        <StyledText style={styles.correctAnswersTitle}>Respostas Corretas:</StyledText>
         <ScrollView style={styles.answersScroll}>
           {questions.map((q, index) => (
             <View key={q.id} style={styles.answerItem}>
-              <Text style={styles.answerQuestion}>{index + 1}. {q.pergunta}</Text>
-              <Text style={styles.answerCorrect}>
+              <StyledText style={styles.answerQuestion}>{index + 1}. {q.pergunta}</StyledText>
+              <StyledText style={styles.answerCorrect}>
                 {q.alternativas.find(alt => alt.isCorrect)?.texto || 'N/A'}
-              </Text>
+              </StyledText>
             </View>
           ))}
         </ScrollView>
@@ -177,13 +179,13 @@ export default function Quiz({ navigation }) {
           style={styles.retryButton}
           onPress={fetchQuestions}
         >
-          <Text style={styles.retryButtonText}>Refazer Quiz</Text>
+          <StyledText style={styles.retryButtonText}>Refazer Quiz</StyledText>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.backToHomeButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backToHomeButtonText}>Voltar</Text>
+          <StyledText style={styles.backToHomeButtonText}>Voltar</StyledText>
         </TouchableOpacity>
       </View>
     );
@@ -194,9 +196,9 @@ export default function Quiz({ navigation }) {
   if (!currentQuestion) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Nenhuma pergunta disponível.</Text>
+        <StyledText style={styles.loadingText}>Nenhuma pergunta disponível.</StyledText>
         <TouchableOpacity style={styles.retryButton} onPress={fetchQuestions}>
-          <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+          <StyledText style={styles.retryButtonText}>Tentar Novamente</StyledText>
         </TouchableOpacity>
       </View>
     );
@@ -206,14 +208,14 @@ export default function Quiz({ navigation }) {
     <View style={styles.quizContainer}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
-        <Text style={styles.backButtonText}>Voltar</Text>
+        <StyledText style={styles.backButtonText}>Voltar</StyledText>
       </TouchableOpacity>
 
-      <Text style={styles.quizTitle}>QUIZ BRECHÓ BOX</Text>
+      <StyledText style={styles.quizTitle}>QUIZ BRECHÓ BOX</StyledText>
 
       <ScrollView contentContainerStyle={styles.questionScrollContent}>
-        <Text style={styles.questionText}>{currentQuestion.pergunta}</Text>
-        <Text style={styles.timerText}>Tempo Restante: {timer} seg</Text>
+        <StyledText style={styles.questionText}>{currentQuestion.pergunta}</StyledText>
+        <StyledText style={styles.timerText}>Tempo Restante: {timer} seg</StyledText>
 
         <View style={styles.optionsContainer}>
           {currentQuestion.alternativas.map((option, index) => (
@@ -228,7 +230,7 @@ export default function Quiz({ navigation }) {
               onPress={() => handleAnswer(index)}
               disabled={selectedAnswerIndex !== null}
             >
-              <Text style={styles.optionButtonText}>{option.texto}</Text>
+              <StyledText style={styles.optionButtonText}>{option.texto}</StyledText>
             </TouchableOpacity>
           ))}
         </View>

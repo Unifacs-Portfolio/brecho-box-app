@@ -8,17 +8,20 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  ScrollView, 
-  KeyboardAvoidingView, 
-  Platform, 
-  Dimensions 
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Dimensions
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logoApp from '../../assets/icon.jpeg';
 import api from '../../src/services/api';
+import * as jwt from 'jwt-decode';
 
-const { height } = Dimensions.get('window'); 
+import StyledText from '../../src/components/StyledText';
+
+const { height } = Dimensions.get('window');
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
@@ -50,101 +53,71 @@ export default function Login({ navigation }) {
     try {
       setLoading(true);
 
-      const response = await api.post('/api/usuario/login', {
-        email,
-        senha: password
-      });
+      // Chamada da API de login
+      const response = await api.post('/api/usuario/login', { email, senha: password });
+      const { token } = response.data;
 
-      // Armazena o token e a preferência "manter conectado"
-      const {token} = response.data;
+      // CORREÇÃO FINAL: Acessa a função jwtDecode através da propriedade 'jwtDecode' do objeto 'jwt'
+      const decodedToken = jwt.jwtDecode(token); 
+      
+      const userId = decodedToken.userID; // Assumindo que o userId está na propriedade 'userID' do token
+
+      // Armazena o token, o e-mail e o userId do usuário
       await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('@manterConectado', manterConectado.toString());
-
-      if (manterConectado) {
-        // Se escolheu manter conectado, armazena por mais tempo
-        await AsyncStorage.setItem('@tokenExpiration', (Date.now() + 30 * 24 * 60 * 60 * 1000).toString()); // 30 dias
-      } else {
-        // Se não, armazena por menos tempo (ex: 1 dia)
-        await AsyncStorage.setItem('@tokenExpiration', (Date.now() + 24 * 60 * 60 * 1000).toString());
-      }
-
-      // Remove a imagem do último usuário, se existir
-      const lastEmail = await AsyncStorage.getItem('@currentUserEmail');
-      if (lastEmail && lastEmail !== email) {
-        await AsyncStorage.removeItem(`@userImage_${lastEmail}`);
-      }
-
-      // Salva o email do novo usuário
       await AsyncStorage.setItem('@currentUserEmail', email);
+      await AsyncStorage.setItem('@currentUserId', userId); 
 
-      // Busca os dados do usuário
-      const userResponse = await api.get(`/api/usuario/${email}`);
-      if (userResponse.data) {
-        await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify({
-          nome: userResponse.data.nome || userResponse.data.usuario?.nome
-        }));
+
+      const expirationTime = Date.now() + 3600 * 1000; 
+      await AsyncStorage.setItem('@tokenExpiration', String(expirationTime));
+
+      // Armazena o estado de "manter conectado"
+      await AsyncStorage.setItem('@manterConectado', manterConectado ? 'true' : 'false');
+
+      // Se a API retornar 'usuario' na resposta de login, armazena o nome
+      if (response.data.usuario && response.data.usuario.nome) {
+        await AsyncStorage.setItem(`@userData:${email}`, JSON.stringify({ nome: response.data.usuario.nome }));
       }
 
-      console.log('Login bem-sucedido');
+      // Navega para a tela principal (AppTabs) após o login
       navigation.navigate('AppTabs');
 
     } catch (error) {
-      console.error('Erro completo no login:', JSON.stringify(error, null, 2));
-      
-      let errorMessage = 'Erro ao fazer login';
-      
-      // Verifica se é um erro do Axios com resposta da API
-      if (error.isAxiosError && error.response) {
-        const serverMessage = error.response.data?.error || error.response.data?.message;
-        
-        if (serverMessage) {
-                  // Mapeia mensagens específicas da API para mensagens amigáveis
-                  if (serverMessage.toLowerCase().includes('não encontrado') || 
-                      serverMessage.toLowerCase().includes('usuário não encontrado') ||
-                      serverMessage.toLowerCase().includes('credenciais inválidas')) {
-                    errorMessage = 'E-mail ou senha incorretos';
-                  } else {
-                    errorMessage = serverMessage;
-                  }
-                }
-        else if (error.response.status === 400 || error.response.status === 401) {
-                    errorMessage = 'E-mail ou senha incorretos';
-                  }
-        else if (error.response.status === 500) {
-                    errorMessage = 'Problema no servidor. Tente novamente mais tarde.';
-                  }
-
-      } else if (error.message === 'Network Error') {
-        errorMessage = 'Sem conexão com a internet. Verifique sua rede.';
+      console.error('Erro ao fazer login:', error.response?.data || error.message);
+      let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message.includes('jwt-decode não é uma função decodificável.')) {
+        errorMessage = 'Erro interno: A biblioteca de decodificação de token não foi carregada corretamente. Tente limpar o cache do Expo/Metro.';
       }
-
       Alert.alert('Erro', errorMessage);
     } finally {
-      setLoading(false);
+      setLoading(false); // Desativa o indicador de carregamento
     }
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Comportamento diferente para iOS e Android
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled" // Garante que toques fora dos inputs não fechem o teclado imediatamente
       >
         <View style={styles.topCurve}>
           <Image source={logoApp} style={styles.appLogo} />
-          <Text style={styles.title}>BrechóBox</Text>
+          <StyledText style={styles.title}>BrechóBox</StyledText>
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.welcome}>Olá, bem-vindo(a) de volta!</Text>
+          <StyledText style={styles.welcome}>Olá, bem-vindo(a) de volta!</StyledText>
 
           <View style={styles.inputGroup}>
             <TextInput
               placeholder="E-mail"
               placeholderTextColor="#aaa"
+              fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={email}
               onChangeText={setEmail}
@@ -164,6 +137,7 @@ export default function Login({ navigation }) {
             <TextInput
               placeholder="Senha"
               placeholderTextColor="#aaa"
+              fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={password}
               onChangeText={setPassword}
@@ -194,7 +168,7 @@ export default function Login({ navigation }) {
                 color="#464193"
               />
             </TouchableOpacity>
-            <Text style={styles.checkboxText}>Manter conectado</Text>
+            <StyledText style={styles.checkboxText}>Manter conectado</StyledText>
           </View>
 
           <TouchableOpacity
@@ -205,7 +179,7 @@ export default function Login({ navigation }) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>Entrar</Text>
+              <StyledText style={styles.loginButtonText}>Entrar</StyledText>
             )}
           </TouchableOpacity>
 
@@ -213,14 +187,14 @@ export default function Login({ navigation }) {
             onPress={() => navigation.navigate('ForgotPassword')}
             disabled={loading}
           >
-            <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
+            <StyledText style={styles.forgotPassword}>Esqueceu a senha?</StyledText>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => navigation.navigate('Registro')}
             disabled={loading}
           >
-            <Text style={styles.register}>Não tem uma conta? Cadastre-se</Text>
+            <StyledText style={styles.register}>Não tem uma conta? Cadastre-se</StyledText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -236,13 +210,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   scrollContent: {
-    flexGrow: 1, 
+    flexGrow: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
   topCurve: {
     backgroundColor: '#473da1',
-    height: height * 0.4, 
+    height: height * 0.4,
     width: '100%',
     borderBottomLeftRadius: 200,
     borderBottomRightRadius: 200,
@@ -251,20 +225,20 @@ const styles = StyleSheet.create({
     paddingTop: 30,
   },
   appLogo: {
-    width: height * 0.18, 
+    width: height * 0.18,
     height: height * 0.18,
     marginBottom: 10,
     resizeMode: 'contain',
   },
   title: {
-    fontSize: height * 0.04, 
+    fontSize: height * 0.04,
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 10,
   },
   formContainer: {
-    width: '90%', 
-    marginTop: -height * 0, 
+    width: '90%',
+    marginTop: -height * 0,
     paddingHorizontal: 20,
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -277,7 +251,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   welcome: {
-    fontSize: height * 0.028, 
+    fontSize: height * 0.024,
     fontWeight: 'bold',
     color: primaryColor,
     marginBottom: 25,
@@ -290,12 +264,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 10,
     marginBottom: 15,
-    width: '100%', 
+    width: '100%',
   },
   inputField: {
     flex: 1,
     height: height * 0.06,
-    fontSize: height * 0.02, 
+    fontSize: height * 0.02,
     color: '#333',
   },
   inputIcon: {
@@ -313,12 +287,12 @@ const styles = StyleSheet.create({
   },
   checkboxText: {
     marginLeft: 8,
-    fontSize: height * 0.018, 
+    fontSize: height * 0.018,
     color: '#555',
   },
   loginButton: {
     backgroundColor: primaryColor,
-    paddingVertical: height * 0.02, 
+    paddingVertical: height * 0.02,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 15,
@@ -338,12 +312,12 @@ const styles = StyleSheet.create({
     color: primaryColor,
     marginTop: 5,
     marginBottom: 10,
-    fontSize: height * 0.018, 
+    fontSize: height * 0.018,
   },
   register: {
     textAlign: 'center',
     color: primaryColor,
     marginTop: 10,
-    fontSize: height * 0.018, 
+    fontSize: height * 0.018,
   },
 });

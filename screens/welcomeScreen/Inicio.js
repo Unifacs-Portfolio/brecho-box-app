@@ -8,6 +8,7 @@ import {
   Dimensions  
 } from 'react-native';
 
+import StyledText from '../../src/components/StyledText';
 
 const { height } = Dimensions.get('window');
 
@@ -20,8 +21,8 @@ export default function Inicio({ navigation }) {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.title}>BrechóBox</Text>
-        <Text style={styles.slogan}>PENSE FORA DA CAIXA</Text>
+        <StyledText style={styles.title}>BrechóBox</StyledText>
+        <StyledText style={styles.slogan}>PENSE FORA DA CAIXA</StyledText>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -29,14 +30,14 @@ export default function Inicio({ navigation }) {
           style={styles.outlinedButton}
           onPress={() => navigation.navigate('Registro')}
         >
-          <Text style={styles.outlinedButtonText}>Crie seu Perfil</Text>
+          <StyledText style={styles.outlinedButtonText}>Crie seu Perfil</StyledText>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.filledButton}
           onPress={() => navigation.navigate('Login')}
         >
-          <Text style={styles.filledButtonText}>Entrar</Text>
+          <StyledText style={styles.filledButtonText}>Entrar</StyledText>
         </TouchableOpacity>
       </View>
     </View>

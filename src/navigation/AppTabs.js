@@ -13,6 +13,7 @@ export default function AppTabs() {
       screenOptions={{
         tabBarActiveTintColor: '#464193',
         tabBarInactiveTintColor: '#888',
+        fontFamily: 'Poppins_400Regular',
         tabBarStyle: {
           backgroundColor: '#fff',
           height: 80,

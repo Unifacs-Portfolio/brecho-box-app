@@ -16,70 +16,73 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import StyledText from '../../src/components/StyledText';
+
 const { width, height } = Dimensions.get('window');
-const primaryColor = '#473da1'; // Cor principal
-const dangerColor = '#D9534F'; // Cor para botão de exclusão
 
 export default function ReceitasDeModa({ navigation }) {
   const [receitas, setReceitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null); 
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
   const [userToken, setUserToken] = useState(null);
-  const [userEmail, setUserEmail] = useState(null); 
+  const [isCurrentUserMonitor, setIsCurrentUserMonitor] = useState(false); 
 
-  // Regex para encontrar URLs do YouTube no texto do conteúdo
-  const youtubeUrlRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
+  // Função para extrair um URL do YouTube do texto e retornar a URL do vídeo e da thumbnail
+  const extractYouTubeUrlAndGetThumbnail = (text) => {
+    if (!text) return { videoUrl: null, thumbnailUrl: null };
 
-  // Função para extrair o ID do vídeo do YouTube e retornar a URL da thumbnail
-  const getYouTubeThumbnail = (content) => {
-    if (!content || typeof content !== 'string') return null;
-    const match = content.match(youtubeUrlRegex);
-    const videoId = match && match[2] ? match[2] : null;
+    // Regex para encontrar URLs do YouTube no texto
+    const youtubeRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
+    const match = text.match(youtubeRegex);
 
-    if (videoId) {
-      return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    if (match && match[1] && match[2]) {
+      const videoUrl = match[1];
+      const videoId = match[2];
+      return {
+        videoUrl: videoUrl,
+        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+      };
     }
-    return null;
+    return { videoUrl: null, thumbnailUrl: null };
   };
 
-  // Função para abrir o link do YouTube extraído do conteúdo
-  const openYouTubeLink = (content) => {
-    if (!content || typeof content !== 'string') {
-      Alert.alert('Erro', 'Conteúdo inválido para abrir link do YouTube.');
-      return;
-    }
-    const match = content.match(youtubeUrlRegex);
-    if (match && match[1]) {
-      Linking.openURL(match[1]).catch(err => Alert.alert('Erro', 'Não foi possível abrir o link do YouTube.'));
-    } else {
-      Alert.alert('Erro', 'Nenhum link do YouTube válido encontrado no conteúdo.');
+  // Função para abrir o link do YouTube
+  const openYouTubeLink = (url) => {
+    if (url) {
+      Linking.openURL(url).catch(err => Alert.alert('Erro', 'Não foi possível abrir o link do YouTube.'));
     }
   };
 
-  // Função para buscar o ID, email e token do usuário logado
+  // Função para buscar o ID e token do usuário logado E o status de monitor
   const fetchUserData = useCallback(async () => {
     try {
       const email = await AsyncStorage.getItem('@currentUserEmail');
       const token = await AsyncStorage.getItem('userToken');
+      const id = await AsyncStorage.getItem('@currentUserId');
       setUserToken(token);
       setUserEmail(email);
+      setCurrentUserId(id);
 
-      if (email && token) {
-        const response = await api.get(`/api/usuario/${email}`, {
+      if (email && token && id) {
+        const response = await api.get(`/api/usuario/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        const userId = response.data?.id || response.data?.user?.id; 
+        const userId = response.data?.user?.id; 
+        const isMonitor = response.data?.user?.is_monitor || false; 
+        
         setCurrentUserId(userId);
-        console.log("Usuário logado ID (fetchUserData):", userId);
+        setIsCurrentUserMonitor(isMonitor); 
       } else {
         setCurrentUserId(null);
-        console.log("Nenhum usuário logado ou token ausente.");
+        setIsCurrentUserMonitor(false);
       }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário para receitas:', error.response?.data || error.message);
       setCurrentUserId(null);
+      setIsCurrentUserMonitor(false); // Garante que o status seja false em caso de erro
     }
   }, []);
 
@@ -98,51 +101,64 @@ export default function ReceitasDeModa({ navigation }) {
           {
             id: 'rec-c1f9bd4b',
             titulo: '13 - Transforme Um Lenço em Uma Bolsa de Nó (Furoshiki)',
-            conteudo: 'Passo a Passo:\n1 ) Abra o lenço sobre uma superfície plana.\n2 ) Amarre as pontas opostas em nós firmes.\n3 ) Faça o mesmo com as outras pontas para criar a base da bolsa.\n4 ) Adicione alças reutilizáveis , se desejar , para maior praticidade.\n\nYouTube Link: https://www.youtube.com/watch?v=UHOH79SU41k',
+            conteudo: 'Passo a Passo:\n1 ) Abra o lenço sobre uma superfície plana.\n2 ) Amarre as pontas opostas em nós firmes. \n3 ) Faça o mesmo com as outras pontas para criar a base da bolsa.\n4 ) Adicione alças reutilizáveis , se desejar , para maior praticidade .\nhttps://www.youtube.com/watch?v=d_xVzY_i8A8', // Adicionado URL no conteúdo para teste
             isverify: true,
-            usuarioId: '0370e782-4669-4ac4-8f59-c5bba0cd4225', // ID de exemplo
+            idUsuario: 'user123',
             verifyBy: null,
             dataCriacao: '2025-06-04T23:35:47.000Z',
             ultimaAlteracao: '2025-06-04T23:35:47.000Z',
             tema: 'Moda',
             subtemas: ['subtema-moda-sustentavel'],
-            fotos: [] // Agora 'fotos' pode vir vazio ou não existir
+            fotos: ['https://placehold.co/600x400/FF00FF/FFFFFF?text=Imagem+Receita+1'] // Adicionado foto para teste
           },
           {
             id: 'rec-26efb810',
             titulo: '5 - Personalização de Jaqueta Jeans com Patches e Bordados',
-            conteudo: 'Customize sua jaqueta jeans adicionando patches de tecido e bordados coloridos para criar um estilo único. Essa técnica permite transformar uma peça antiga em algo novo e expressivo, além de ser uma ótima forma de demonstrar sua criatividade e engajamento com a moda sustentável.\n\nAssista: https://youtu.be/F_fG1d1K_2c',
+            conteudo: 'Customize sua jaqueta jeans adicionando patches de tecido e bordados coloridos para criar um estilo único. Essa técnica permite transformar uma peça antiga em algo novo e expressivo, além de ser uma ótima forma de demonstrar sua criatividade e engajamento com a moda sustentável.\nhttps://www.youtube.com/watch?v=F_fG1d1K_2c', // Adicionado URL no conteúdo para teste
             isverify: true,
-            usuarioId: 'outro_id_de_usuario', // Outro ID de exemplo
+            idUsuario: 'user456',
             verifyBy: null,
             dataCriacao: '2025-06-05T10:00:00.000Z',
             ultimaAlteracao: '2025-06-05T10:00:00.000Z',
             tema: 'Moda',
             subtemas: ['subtema-customizacao'],
-            fotos: []
+            fotos: [] // Fotos vazio
           },
           {
             id: 'rec-abcde123',
             titulo: '1 - Como Fazer Peças de Roupa com Materiais Reciclados',
-            conteudo: 'Aprenda a criar roupas incríveis usando tecidos e materiais que seriam descartados. Desde camisetas antigas a retalhos de tecido, as possibilidades são infinitas. Este tutorial foca em técnicas de costura e upcycling para transformar o lixo em luxo, promovendo a sustentabilidade na moda.\n\nMais detalhes em: https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            conteudo: 'Aprenda a criar roupas incríveis usando tecidos e materiais que seriam descartados. Desde camisetas antigas a retalhos de tecido, as possibilidades são infinitas. Este tutorial foca em técnicas de costura e upcycling para transformar o lixo em luxo, promovendo a sustentabilidade na moda.\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ', // Adicionado URL no conteúdo para teste
             isverify: true,
-            usuarioId: '0370e782-4669-4ac4-8f59-c5bba0cd4225', // ID de exemplo
+            idUsuario: 'user123',
             verifyBy: 'monitor_a',
             dataCriacao: '2025-06-03T15:20:00.000Z',
             ultimaAlteracao: '2025-06-03T15:20:00.000Z',
             tema: 'Sustentabilidade',
             subtemas: ['subtema-reciclagem', 'subtema-upcycling'],
-            fotos: []
+            fotos: ['https://placehold.co/600x400/00FFFF/000000?text=Imagem+Receita+3'] // Adicionado foto para teste
           },
         ];
       }
 
       console.log('Receitas Carregadas!');
       const sortedReceitas = fetchedData.sort((a, b) => {
-        const numA = parseInt(a.titulo.match(/^\d+/)?.[0] || 0);
-        const numB = parseInt(b.titulo.match(/^\d+/)?.[0] || 0);
-        return numA - numB;
+        const numA = parseInt(a.titulo.match(/^\D*(\d+)/)?.[1] || 0);
+        const numB = parseInt(b.titulo.match(/^\D*(\d+)/)?.[1] || 0);
+        
+        const isNumAValid = !isNaN(numA) && numA !== undefined;
+        const isNumBValid = !isNaN(numB) && numB !== undefined;
+
+        if (isNumAValid && isNumBValid) {
+          return numA - numB;
+        } else if (isNumAValid) {
+          return -1;
+        } else if (isNumBValid) {
+          return 1;
+        } else {
+          return a.titulo.localeCompare(b.titulo);
+        }
       });
+
 
       setReceitas(sortedReceitas);
 
@@ -150,8 +166,8 @@ export default function ReceitasDeModa({ navigation }) {
       console.error('Erro ao buscar receitas:', error);
       Alert.alert('Erro', 'Não foi possível carregar as receitas');
       setReceitas([
-        { id: 'rec-test1', titulo: '1 - Receita Teste', conteudo: 'Conteúdo...', fotos: [], usuarioId: '0370e782-4669-4ac4-8f59-c5bba0cd4225', isverify: true },
-        { id: 'rec-test2', titulo: '2 - Outra Receita', conteudo: 'Conteúdo...', fotos: [], usuarioId: 'outro_id_de_usuario', isverify: true },
+        { id: 'rec-test1', titulo: '1 - Receita Teste', conteudo: 'Conteúdo...', fotos: [], idUsuario: 'user123', isverify: true },
+        { id: 'rec-test2', titulo: '2 - Outra Receita', conteudo: 'Conteúdo...', fotos: [], idUsuario: 'anotherUser', isverify: true },
       ]);
     } finally {
       setLoading(false);
@@ -163,7 +179,7 @@ export default function ReceitasDeModa({ navigation }) {
     fetchUserData();
     fetchReceitas();
     const unsubscribe = navigation.addListener('focus', () => {
-        fetchUserData(); 
+        fetchUserData();
         fetchReceitas();
     });
     return unsubscribe;
@@ -184,22 +200,20 @@ export default function ReceitasDeModa({ navigation }) {
     return date.toLocaleDateString('pt-BR');
   };
 
-  const handleDeleteReceita = async (receitaId, receitaUsuarioId) => {
+  const handleDeleteReceita = async (receitaId, receitaUserId) => {
     if (!userToken) {
       Alert.alert('Erro', 'Você precisa estar logado para deletar receitas.');
       navigation.navigate('Login');
       return;
     }
-
-    if (!receitaUsuarioId || currentUserId !== receitaUsuarioId) {
-      Alert.alert('Ação Não Permitida', 'Você só pode deletar receitas que você mesmo criou.');
-      console.log(`Tentativa de deletar receita: currentUserId = ${currentUserId}, receitaUsuarioId = ${receitaUsuarioId}`);
+    if (currentUserId !== receitaUserId && !isCurrentUserMonitor) {
+      Alert.alert('Ação Não Permitida', 'Você só pode deletar receitas que você mesmo criou ou se for um monitor.');
       return;
     }
 
     Alert.alert(
       'Confirmar Exclusão',
-      'Tem certeza que deseja excluir esta receita? Esta ação é irreversível.',
+      'Tem certeza que deseja excluir esta receita?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -212,7 +226,7 @@ export default function ReceitasDeModa({ navigation }) {
                   'Authorization': `Bearer ${userToken}`,
                 },
               });
-              if (response.status === 200 || response.status === 204) {
+              if (response.status === 200) {
                 Alert.alert('Sucesso', 'Receita excluída com sucesso!');
                 setReceitas(prevReceitas => prevReceitas.filter(receita => receita.id !== receitaId));
               } else {
@@ -231,13 +245,17 @@ export default function ReceitasDeModa({ navigation }) {
     );
   };
 
+  const handleEditReceita = (receitaId) => {
+    navigation.navigate('EditReceitas', { receitaId: receitaId });
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('EscolhaDicasReceitas')}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <Text style={styles.header}>Receitas de Moda</Text>
+      <StyledText style={styles.header}>Receitas de Moda</StyledText>
 
       {loading ? (
         <ActivityIndicator size="large" color="#fff" style={{ marginTop: 40 }} />
@@ -256,9 +274,25 @@ export default function ReceitasDeModa({ navigation }) {
           {receitas.length > 0 ? (
             receitas.map((item) => {
               const isExpanded = expandedId === item.id;
-              const isOwner = currentUserId && item.usuarioId && currentUserId === item.usuarioId;
-              const thumbnailUrl = getYouTubeThumbnail(item.conteudo); 
               
+              let displayImageSource = null;
+              let videoUrlToDisplay = null; 
+              let isVideoThumbnailUsed = false; 
+
+              if (item.fotos && Array.isArray(item.fotos) && item.fotos.length > 0 && typeof item.fotos[0] === 'string' && item.fotos[0].startsWith('http')) {
+                displayImageSource = { uri: item.fotos[0] };
+              } else {
+                const { videoUrl, thumbnailUrl } = extractYouTubeUrlAndGetThumbnail(item.conteudo);
+                if (thumbnailUrl) {
+                  displayImageSource = { uri: thumbnailUrl };
+                  videoUrlToDisplay = videoUrl; 
+                  isVideoThumbnailUsed = true;
+                }
+              }
+
+              const isOwner = currentUserId === item.idUsuario;
+              const canModify = isCurrentUserMonitor; 
+
               return (
                 <TouchableOpacity
                   key={item.id}
@@ -267,7 +301,23 @@ export default function ReceitasDeModa({ navigation }) {
                   activeOpacity={0.8}
                 >
                   <View style={styles.cardHeader}>
-                    <Text style={styles.title}>{item.titulo}</Text>
+                    <StyledText style={styles.title}>{item.titulo}</StyledText>
+                    {canModify && ( 
+                      <View style={styles.actionButtonsContainer}>
+                        <TouchableOpacity
+                          onPress={() => handleEditReceita(item.id)}
+                          style={styles.editButton}
+                        >
+                          <Ionicons name="create-outline" size={20} color="#464193" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteReceita(item.id, item.idUsuario)}
+                          style={styles.deleteButton}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="red" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
                     <Ionicons
                       name={isExpanded ? 'chevron-up' : 'chevron-down'}
                       size={20}
@@ -277,64 +327,62 @@ export default function ReceitasDeModa({ navigation }) {
 
                   {isExpanded && (
                     <View style={styles.expandedContent}>
-                      {thumbnailUrl ? ( // Renderiza a imagem se houver thumbnail
-                        <TouchableOpacity onPress={() => openYouTubeLink(item.conteudo)}>
+                      {displayImageSource && ( 
+                        <TouchableOpacity onPress={() => isVideoThumbnailUsed && videoUrlToDisplay ? openYouTubeLink(videoUrlToDisplay) : null}>
                           <Image
-                            source={{ uri: thumbnailUrl }}
+                            source={displayImageSource}
                             style={styles.image}
                             resizeMode="cover"
                           />
                         </TouchableOpacity>
-                      ) : ( // Placeholder se não houver thumbnail
-                        <View style={styles.imagePlaceholder}>
-                          <Ionicons name="videocam-off-outline" size={50} color="#ccc" />
-                          <Text style={styles.imagePlaceholderText}>Vídeo Não Disponível</Text>
-                        </View>
                       )}
                       
-                      {/* Exibe o conteúdo completo */}
-                      <Text style={styles.description}>{item.conteudo}</Text>
+                      {/* Exibe a descrição, removendo o URL do YouTube se uma thumbnail de vídeo foi usada */}
+                      <StyledText style={styles.description}>
+                        {isVideoThumbnailUsed && videoUrlToDisplay
+                          ? item.conteudo.replace(videoUrlToDisplay, '').trim()
+                          : item.conteudo.trim()}
+                      </StyledText>
 
                       <View style={styles.infoContainer}>
-                        {/* Remove a exibição do link do YouTube separado, pois já está no conteúdo */}
-                        <Text style={styles.info}>
-                          <Text style={styles.label}>Data: </Text>
-                          {formatDate(item.dataCriacao)}
-                        </Text>
-                        {item.isVerify && ( 
-                            <Text style={styles.verifiedBadge}>Verificado</Text>
+                        {videoUrlToDisplay && ( // Informação do Link do YouTube
+                          <StyledText style={styles.infoDetail}>
+                            <StyledText style={styles.infoLabel}>Link do YouTube: </StyledText>
+                            <StyledText style={styles.youtubeLinkText} onPress={() => openYouTubeLink(videoUrlToDisplay)}>
+                              {videoUrlToDisplay.length > 50 ? `${videoUrlToDisplay.substring(0, 50)}...` : videoUrlToDisplay}
+                            </StyledText>
+                          </StyledText>
+                        )}
+                        {item.dataCriacao && ( // Informação da Data de Criação
+                          <StyledText style={styles.infoDetail}>
+                            <StyledText style={styles.infoLabel}>Data de Criação: </StyledText>
+                            {formatDate(item.dataCriacao)}
+                          </StyledText>
+                        )}
+                        {item.isverify && (
+                            <StyledText style={styles.verifiedBadge}>Verificado</StyledText>
                         )}
                       </View>
-                       {isOwner && (
-                        <TouchableOpacity
-                          style={[styles.deleteButton, loading && styles.disabledButton]}
-                          onPress={() => handleDeleteReceita(item.id, item.usuarioId)}
-                          disabled={loading}
-                        >
-                          {loading ? (
-                            <ActivityIndicator color="#fff" />
-                          ) : (
-                            <Text style={styles.deleteButtonText}>Excluir Receita</Text>
-                          )}
-                        </TouchableOpacity>
-                      )}
                     </View>
                   )}
                 </TouchableOpacity>
               );
             })
           ) : (
-            <Text style={styles.emptyMessage}>Nenhuma receita encontrada</Text>
+            <StyledText style={styles.emptyMessage}>Nenhuma receita encontrada</StyledText>
           )}
         </ScrollView>
       )}
 
-      <TouchableOpacity
-        style={styles.createButton}
-        onPress={() => navigation.navigate('CreateReceitas')}
-      >
-        <Ionicons name="add" size={30} color="#fff" />
-      </TouchableOpacity>
+      {/* O botão de criar receitas só aparece para monitores */}
+      {isCurrentUserMonitor && (
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => navigation.navigate('CreateReceitas')}
+        >
+          <Ionicons name="add" size={30} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -342,7 +390,7 @@ export default function ReceitasDeModa({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: primaryColor,
+    backgroundColor: '#464193',
     paddingTop: 50,
     paddingHorizontal: 20,
   },
@@ -391,15 +439,17 @@ const styles = StyleSheet.create({
     marginRight: 10,
     flexShrink: 1,
   },
-  deleteButton: {
-    backgroundColor: dangerColor,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
+  actionButtonsContainer: { 
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 15,
-    alignSelf: 'flex-end',
+    marginLeft: 'auto', 
+  },
+  editButton: {
+    padding: 5,
+    marginRight: 10, 
+  },
+  deleteButton: {
+    padding: 5,
   },
   expandedContent: {
     marginTop: 10,
@@ -410,20 +460,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 10,
   },
-  imagePlaceholder: { // Novo estilo para placeholder da imagem
-    width: '100%',
-    height: width * 0.55,
-    borderRadius: 12,
-    marginBottom: 10,
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imagePlaceholderText: {
-    color: '#888',
-    marginTop: 5,
-    fontSize: 14,
-  },
   description: {
     fontSize: 14,
     color: '#555',
@@ -433,17 +469,20 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 10,
   },
-  info: {
+  infoDetail: { 
     fontSize: 13,
     color: '#333',
-    marginBottom: 6,
+    marginBottom: 5,
   },
-  label: {
+  infoLabel: { 
     fontWeight: 'bold',
     color: '#464193',
   },
-  youtubeLink: {
+  youtubeLinkText: { 
     color: '#0000EE',
     textDecorationLine: 'underline',
   },
@@ -470,22 +509,14 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   verifiedBadge: {
-    backgroundColor: '#28a745', 
-    color: '#fff', 
+    backgroundColor: '#28a745',
+    color: '#fff',
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 5,
     fontSize: 12,
     fontWeight: 'bold',
-    alignSelf: 'flex-start', 
-    marginTop: 10, 
-  },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    alignSelf: 'flex-start',
+    marginTop: 10,
   },
 });
