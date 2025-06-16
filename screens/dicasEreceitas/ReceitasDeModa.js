@@ -28,32 +28,91 @@ export default function ReceitasDeModa({ navigation }) {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
   const [userToken, setUserToken] = useState(null);
-  const [isCurrentUserMonitor, setIsCurrentUserMonitor] = useState(false); 
+  const [isCurrentUserMonitor, setIsCurrentUserMonitor] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
 
-  // Função para extrair um URL do YouTube do texto e retornar a URL do vídeo e da thumbnail
-  const extractYouTubeUrlAndGetThumbnail = (text) => {
-    if (!text) return { videoUrl: null, thumbnailUrl: null };
-
-    // Regex para encontrar URLs do YouTube no texto
-    const youtubeRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
-    const match = text.match(youtubeRegex);
-
-    if (match && match[1] && match[2]) {
-      const videoUrl = match[1];
-      const videoId = match[2];
-      return {
-        videoUrl: videoUrl,
-        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-      };
+  // Função para navegar entre as imagens e vídeo
+  const handleImagePress = (receitaId, totalImages, hasVideo, currentMedia) => {
+    if (currentMedia.type === 'video') {
+      openVideoLink(currentMedia.videoUrl);
+      return;
     }
-    return { videoUrl: null, thumbnailUrl: null };
+
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [receitaId]: (prev[receitaId] || 0) + 1 >= totalImages + (hasVideo ? 1 : 0)
+        ? 0
+        : (prev[receitaId] || 0) + 1
+    }));
   };
 
-  // Função para abrir o link do YouTube
-  const openYouTubeLink = (url) => {
-    if (url) {
-      Linking.openURL(url).catch(err => Alert.alert('Erro', 'Não foi possível abrir o link do YouTube.'));
+  // Função para extrair URLs de vídeo de qualquer plataforma
+  const extractVideoUrlAndGetThumbnail = (text) => {
+    if (!text) return { videoUrl: null, thumbnailUrl: null, platform: null };
+
+    // Regex para múltiplas plataformas
+    const videoRegex = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?|shorts)\/|\S*?[?&]v=|youtu\.be\/|tiktok\.com\/@[^\/]+\/video\/|tiktok\.com\/v\/|vm\.tiktok\.com\/|t\.me\/[^\/]+\/[0-9]+)([a-zA-Z0-9_-]+)(?:[^\s]*)?)/;
+    const match = text.replace(/\s+/g, '').match(videoRegex);
+
+
+    if (match && match[1]) {
+      const videoId = match[1];
+      let thumbnailUrl = null;
+      let platform = 'other';
+
+      // Determina a plataforma e obtém a thumbnail apropriada
+      if (text.includes('youtube.com') || text.includes('youtu.be')) {
+        platform = 'youtube';
+        thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      } else if (text.includes('tiktok.com') || text.includes('vm.tiktok.com')) {
+        platform = 'tiktok';
+        thumbnailUrl = 'https://play-lh.googleusercontent.com/Ui_-OW6UJI147ySDX9guWWDiCPSq1vtxoC-xG17BU2T0vz4Q0OZi3eJ9w0x5R4n7w=w240-h480-rw';
+      } else if (text.includes('t.me')) {
+        platform = 'telegram';
+        thumbnailUrl = 'https://telegram.org/img/t_logo.png';
+      }
+
+      return {
+        videoUrl: match[0],
+        thumbnailUrl,
+        platform
+      };
     }
+    return { videoUrl: null, thumbnailUrl: null, platform: null };
+  };
+
+  // Função para abrir o link do vídeo
+  const openVideoLink = (url) => {
+    if (url) {
+      Linking.openURL(url).catch(err => Alert.alert('Erro', 'Não foi possível abrir o link do vídeo.'));
+    }
+  };
+
+  // Função para verificar e corrigir o formato das fotos
+  const getValidPhotos = (photos) => {
+    const validPhotos = [];
+    if (!photos || !Array.isArray(photos)) return validPhotos;
+
+    photos.forEach(photo => {
+      if (typeof photo === 'string' && photo.startsWith('http')) {
+        validPhotos.push({ uri: photo, type: 'image' });
+      } else if (typeof photo === 'string' && photo.startsWith('[')) {
+        try {
+          const parsedPhotos = JSON.parse(photo);
+          if (Array.isArray(parsedPhotos)) {
+            parsedPhotos.forEach(p => {
+              if (typeof p === 'string' && p.startsWith('http')) {
+                validPhotos.push({ uri: p, type: 'image' });
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error parsing photos array:', e);
+        }
+      }
+    });
+
+    return validPhotos;
   };
 
   // Função para buscar o ID e token do usuário logado E o status de monitor
@@ -68,13 +127,13 @@ export default function ReceitasDeModa({ navigation }) {
 
       if (email && token && id) {
         const response = await api.get(`/api/usuario/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` }
         });
-        const userId = response.data?.user?.id; 
-        const isMonitor = response.data?.user?.is_monitor || false; 
-        
+        const userId = response.data?.user?.id;
+        const isMonitor = response.data?.user?.is_monitor || false;
+
         setCurrentUserId(userId);
-        setIsCurrentUserMonitor(isMonitor); 
+        setIsCurrentUserMonitor(isMonitor);
       } else {
         setCurrentUserId(null);
         setIsCurrentUserMonitor(false);
@@ -82,17 +141,18 @@ export default function ReceitasDeModa({ navigation }) {
     } catch (error) {
       console.error('Erro ao buscar dados do usuário para receitas:', error.response?.data || error.message);
       setCurrentUserId(null);
-      setIsCurrentUserMonitor(false); // Garante que o status seja false em caso de erro
+      setIsCurrentUserMonitor(false);
     }
   }, []);
 
+  // Função para buscar receitas - adiciona reset de índices
   const fetchReceitas = useCallback(async () => {
     setLoading(true);
-    let fetchedData = [];
-
+    setCurrentImageIndex({}); // Reseta todos os índices ao atualizar a lista
     try {
       const response = await api.get('/api/Moda/receitas');
 
+      let fetchedData = [];
       if (response.data && Array.isArray(response.data.receitas) && response.data.receitas.length > 0) {
         fetchedData = response.data.receitas;
       } else {
@@ -101,7 +161,7 @@ export default function ReceitasDeModa({ navigation }) {
           {
             id: 'rec-c1f9bd4b',
             titulo: '13 - Transforme Um Lenço em Uma Bolsa de Nó (Furoshiki)',
-            conteudo: 'Passo a Passo:\n1 ) Abra o lenço sobre uma superfície plana.\n2 ) Amarre as pontas opostas em nós firmes. \n3 ) Faça o mesmo com as outras pontas para criar a base da bolsa.\n4 ) Adicione alças reutilizáveis , se desejar , para maior praticidade .\nhttps://www.youtube.com/watch?v=d_xVzY_i8A8', // Adicionado URL no conteúdo para teste
+            conteudo: 'Passo a Passo:\n1 ) Abra o lenço sobre uma superfície plana.\n2 ) Amarre as pontas opostas em nós firmes. \n3 ) Faça o mesmo com as outras pontas para criar a base da bolsa.\n4 ) Adicione alças reutilizáveis , se desejar , para maior praticidade .\nhttps://www.youtube.com/watch?v=d_xVzY_i8A8',
             isverify: true,
             idUsuario: 'user123',
             verifyBy: null,
@@ -109,12 +169,12 @@ export default function ReceitasDeModa({ navigation }) {
             ultimaAlteracao: '2025-06-04T23:35:47.000Z',
             tema: 'Moda',
             subtemas: ['subtema-moda-sustentavel'],
-            fotos: ['https://placehold.co/600x400/FF00FF/FFFFFF?text=Imagem+Receita+1'] // Adicionado foto para teste
+            fotos: ['https://placehold.co/600x400/FF00FF/FFFFFF?text=Imagem+Receita+1']
           },
           {
             id: 'rec-26efb810',
             titulo: '5 - Personalização de Jaqueta Jeans com Patches e Bordados',
-            conteudo: 'Customize sua jaqueta jeans adicionando patches de tecido e bordados coloridos para criar um estilo único. Essa técnica permite transformar uma peça antiga em algo novo e expressivo, além de ser uma ótima forma de demonstrar sua criatividade e engajamento com a moda sustentável.\nhttps://www.youtube.com/watch?v=F_fG1d1K_2c', // Adicionado URL no conteúdo para teste
+            conteudo: 'Customize sua jaqueta jeans adicionando patches de tecido e bordados coloridos para criar um estilo único. Essa técnica permite transformar uma peça antiga em algo novo e expressivo, além de ser uma ótima forma de demonstrar sua criatividade e engajamento com a moda sustentável.\nhttps://www.youtube.com/watch?v=F_fG1d1K_2c',
             isverify: true,
             idUsuario: 'user456',
             verifyBy: null,
@@ -122,12 +182,12 @@ export default function ReceitasDeModa({ navigation }) {
             ultimaAlteracao: '2025-06-05T10:00:00.000Z',
             tema: 'Moda',
             subtemas: ['subtema-customizacao'],
-            fotos: [] // Fotos vazio
+            fotos: []
           },
           {
             id: 'rec-abcde123',
             titulo: '1 - Como Fazer Peças de Roupa com Materiais Reciclados',
-            conteudo: 'Aprenda a criar roupas incríveis usando tecidos e materiais que seriam descartados. Desde camisetas antigas a retalhos de tecido, as possibilidades são infinitas. Este tutorial foca em técnicas de costura e upcycling para transformar o lixo em luxo, promovendo a sustentabilidade na moda.\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ', // Adicionado URL no conteúdo para teste
+            conteudo: 'Aprenda a criar roupas incríveis usando tecidos e materiais que seriam descartados. Desde camisetas antigas a retalhos de tecido, as possibilidades são infinitas. Este tutorial foca em técnicas de costura e upcycling para transformar o lixo em luxo, promovendo a sustentabilidade na moda.\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ',
             isverify: true,
             idUsuario: 'user123',
             verifyBy: 'monitor_a',
@@ -135,7 +195,7 @@ export default function ReceitasDeModa({ navigation }) {
             ultimaAlteracao: '2025-06-03T15:20:00.000Z',
             tema: 'Sustentabilidade',
             subtemas: ['subtema-reciclagem', 'subtema-upcycling'],
-            fotos: ['https://placehold.co/600x400/00FFFF/000000?text=Imagem+Receita+3'] // Adicionado foto para teste
+            fotos: ['https://placehold.co/600x400/00FFFF/000000?text=Imagem+Receita+3']
           },
         ];
       }
@@ -144,7 +204,7 @@ export default function ReceitasDeModa({ navigation }) {
       const sortedReceitas = fetchedData.sort((a, b) => {
         const numA = parseInt(a.titulo.match(/^\D*(\d+)/)?.[1] || 0);
         const numB = parseInt(b.titulo.match(/^\D*(\d+)/)?.[1] || 0);
-        
+
         const isNumAValid = !isNaN(numA) && numA !== undefined;
         const isNumBValid = !isNaN(numB) && numB !== undefined;
 
@@ -158,7 +218,6 @@ export default function ReceitasDeModa({ navigation }) {
           return a.titulo.localeCompare(b.titulo);
         }
       });
-
 
       setReceitas(sortedReceitas);
 
@@ -179,8 +238,8 @@ export default function ReceitasDeModa({ navigation }) {
     fetchUserData();
     fetchReceitas();
     const unsubscribe = navigation.addListener('focus', () => {
-        fetchUserData();
-        fetchReceitas();
+      fetchUserData();
+      fetchReceitas();
     });
     return unsubscribe;
   }, [fetchUserData, fetchReceitas, navigation]);
@@ -190,8 +249,25 @@ export default function ReceitasDeModa({ navigation }) {
     fetchReceitas();
   }, [fetchReceitas]);
 
+
   const toggleExpand = (id) => {
-    setExpandedId(expandedId === id ? null : id);
+    console.log(`Antes - expandedId: ${expandedId}, nova id: ${id}, currentIndex:`, currentImageIndex);
+    
+    setCurrentImageIndex(prev => {
+      const newState = {
+        ...prev,
+        [id]: 0
+      };
+      if (expandedId !== id && expandedId !== null) {
+        newState[expandedId] = 0;
+      }
+      console.log('Durante - novo estado:', newState);
+      return newState;
+    });
+    
+    setExpandedId(prev => prev === id ? null : id);
+    
+    console.log(`Depois - expandedId será: ${expandedId === id ? null : id}`);
   };
 
   const formatDate = (dateString) => {
@@ -274,24 +350,26 @@ export default function ReceitasDeModa({ navigation }) {
           {receitas.length > 0 ? (
             receitas.map((item) => {
               const isExpanded = expandedId === item.id;
-              
-              let displayImageSource = null;
-              let videoUrlToDisplay = null; 
-              let isVideoThumbnailUsed = false; 
 
-              if (item.fotos && Array.isArray(item.fotos) && item.fotos.length > 0 && typeof item.fotos[0] === 'string' && item.fotos[0].startsWith('https://')) {
-                displayImageSource = { url: item.fotos[0] };
-              } else {
-                const { videoUrl, thumbnailUrl } = extractYouTubeUrlAndGetThumbnail(item.conteudo);
-                if (thumbnailUrl) {
-                  displayImageSource = { uri: thumbnailUrl };
-                  videoUrlToDisplay = videoUrl; 
-                  isVideoThumbnailUsed = true;
-                }
+              const validPhotos = getValidPhotos(item.fotos);
+              const { videoUrl, thumbnailUrl, platform } = extractVideoUrlAndGetThumbnail(item.conteudo);
+              const hasVideo = !!thumbnailUrl;
+
+              if (hasVideo) {
+                validPhotos.push({
+                  uri: thumbnailUrl,
+                  type: 'video',
+                  videoUrl,
+                  platform
+                });
               }
 
+              const currentIndex = currentImageIndex[item.id] || 0; // Sempre começa em 0
+              const currentMedia = validPhotos.length > 0 ? validPhotos[currentIndex % validPhotos.length] : null;
+              const canCycleImages = validPhotos.length > 1;
+
               const isOwner = currentUserId === item.idUsuario;
-              const canModify = isCurrentUserMonitor; 
+              const canModify = isCurrentUserMonitor || isOwner;
 
               return (
                 <TouchableOpacity
@@ -302,7 +380,7 @@ export default function ReceitasDeModa({ navigation }) {
                 >
                   <View style={styles.cardHeader}>
                     <StyledText style={styles.title}>{item.titulo}</StyledText>
-                    {canModify && ( 
+                    {canModify && (
                       <View style={styles.actionButtonsContainer}>
                         <TouchableOpacity
                           onPress={() => handleEditReceita(item.id)}
@@ -327,40 +405,64 @@ export default function ReceitasDeModa({ navigation }) {
 
                   {isExpanded && (
                     <View style={styles.expandedContent}>
-                      {displayImageSource && ( 
-                        <TouchableOpacity onPress={() => isVideoThumbnailUsed && videoUrlToDisplay ? openYouTubeLink(videoUrlToDisplay) : null}>
+                      {validPhotos.length > 0 ? (
+                        <TouchableOpacity
+                          onPress={() => handleImagePress(item.id, validPhotos.length - (hasVideo ? 1 : 0), hasVideo, currentMedia)}
+                          activeOpacity={0.7}
+                        >
                           <Image
-                            source={displayImageSource}
+                            source={{ uri: currentMedia.uri }}
                             style={styles.image}
                             resizeMode="cover"
                           />
+                          {canCycleImages && (
+                            <View style={styles.imageCounter}>
+                              <StyledText style={styles.counterText}>
+                                {currentIndex + 1}/{validPhotos.length}
+                              </StyledText>
+                            </View>
+                          )}
+                          {currentMedia.type === 'video' && (
+                            <View style={styles.videoOverlay}>
+                              <Ionicons name="play-circle" size={50} color="#fff" />
+                              <StyledText style={styles.platformBadge}>
+                                {currentMedia.platform === 'youtube' ? 'YouTube' :
+                                  currentMedia.platform === 'tiktok' ? 'TikTok' :
+                                    currentMedia.platform === 'telegram' ? 'Telegram' : 'Vídeo'}
+                              </StyledText>
+                            </View>
+                          )}
                         </TouchableOpacity>
+                      ) : (
+                        <View style={[styles.image, styles.placeholderImage]}>
+                          <Ionicons name="image-outline" size={50} color="#ccc" />
+                          <StyledText style={styles.placeholderText}>Sem imagem disponível</StyledText>
+                        </View>
                       )}
-                      
-                      {/* Exibe a descrição, removendo o URL do YouTube se uma thumbnail de vídeo foi usada */}
+
                       <StyledText style={styles.description}>
-                        {isVideoThumbnailUsed && videoUrlToDisplay
-                          ? item.conteudo.replace(videoUrlToDisplay, '').trim()
+                        {videoUrl
+                          ? item.conteudo.replace(videoUrl, '').trim()
                           : item.conteudo.trim()}
                       </StyledText>
 
                       <View style={styles.infoContainer}>
-                        {videoUrlToDisplay && ( // Informação do Link do YouTube
+                        {videoUrl && (
                           <StyledText style={styles.infoDetail}>
-                            <StyledText style={styles.infoLabel}>Link do YouTube: </StyledText>
-                            <StyledText style={styles.youtubeLinkText} onPress={() => openYouTubeLink(videoUrlToDisplay)}>
-                              {videoUrlToDisplay.length > 50 ? `${videoUrlToDisplay.substring(0, 50)}...` : videoUrlToDisplay}
+                            <StyledText style={styles.infoLabel}>Link do Vídeo: </StyledText>
+                            <StyledText style={styles.videoLinkText} onPress={() => openVideoLink(videoUrl)}>
+                              {videoUrl.length > 50 ? `${videoUrl.substring(0, 50)}...` : videoUrl}
                             </StyledText>
                           </StyledText>
                         )}
-                        {item.dataCriacao && ( // Informação da Data de Criação
+                        {item.dataCriacao && (
                           <StyledText style={styles.infoDetail}>
                             <StyledText style={styles.infoLabel}>Data de Criação: </StyledText>
                             {formatDate(item.dataCriacao)}
                           </StyledText>
                         )}
                         {item.isverify && (
-                            <StyledText style={styles.verifiedBadge}>Verificado</StyledText>
+                          <StyledText style={styles.verifiedBadge}>Verificado</StyledText>
                         )}
                       </View>
                     </View>
@@ -393,6 +495,44 @@ const styles = StyleSheet.create({
     backgroundColor: '#464193',
     paddingTop: 50,
     paddingHorizontal: 20,
+  },
+  imageCounter: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  counterText: {
+    color: '#fff',
+    fontSize: 12,
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  platformBadge: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    color: '#fff',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 5,
+    fontSize: 12,
+  },
+  videoLinkText: {
+    color: '#0000EE',
+    textDecorationLine: 'underline',
   },
   backButton: {
     position: 'absolute',
@@ -439,14 +579,14 @@ const styles = StyleSheet.create({
     marginRight: 10,
     flexShrink: 1,
   },
-  actionButtonsContainer: { 
+  actionButtonsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 'auto', 
+    marginLeft: 'auto',
   },
   editButton: {
     padding: 5,
-    marginRight: 10, 
+    marginRight: 10,
   },
   deleteButton: {
     padding: 5,
@@ -459,6 +599,16 @@ const styles = StyleSheet.create({
     height: width * 0.55,
     borderRadius: 12,
     marginBottom: 10,
+  },
+  placeholderImage: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#999',
+    marginTop: 8,
+    fontSize: 14,
   },
   description: {
     fontSize: 14,
@@ -473,16 +623,16 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     paddingTop: 10,
   },
-  infoDetail: { 
+  infoDetail: {
     fontSize: 13,
     color: '#333',
     marginBottom: 5,
   },
-  infoLabel: { 
+  infoLabel: {
     fontWeight: 'bold',
     color: '#464193',
   },
-  youtubeLinkText: { 
+  youtubeLinkText: {
     color: '#0000EE',
     textDecorationLine: 'underline',
   },

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   View,
   Text,
@@ -16,13 +17,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../src/services/api'; 
 import * as ImagePicker from 'expo-image-picker'; 
 import * as FileSystem from 'expo-file-system'; 
+import api from '../../src/services/api';
+
+import StyledText from '../../src/components/StyledText';
 
 const { width, height } = Dimensions.get('window');
 const primaryColor = '#464193';
 const secondaryColor = '#6A5ACD'; 
+const API_URL = 'https://api-consumo-app.onrender.com';
 
 export default function CreateReceitasScreen({ navigation }) {
   const [titulo, setTitulo] = useState('');
@@ -31,8 +35,8 @@ export default function CreateReceitasScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [userToken, setUserToken] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
-  const [selectedImages, setSelectedImages] = useState([]); 
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]); 
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -45,7 +49,7 @@ export default function CreateReceitasScreen({ navigation }) {
         setCurrentUserId(id);
 
         if (email && token && id) {
-          const response = await api.get(`/api/usuario/${id}`, {
+          const response = await api.get(`api/usuario/${id}`, {
               headers: { Authorization: `Bearer ${token}` }
           });
           const userId = response.data?.id || response.data?.user?.id; 
@@ -60,6 +64,8 @@ export default function CreateReceitasScreen({ navigation }) {
     fetchUserData();
   }, [navigation]);
 
+ 
+
   // Função para selecionar imagens da galeria
   const handlePickImage = async () => {
     try {
@@ -70,35 +76,18 @@ export default function CreateReceitasScreen({ navigation }) {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
-        quality: 0.7,
-        selectionLimit: 8 - selectedImages.length,
+        mediaTypes: ImagePicker.MediaType,
+        allowsMultipleSelection: true, // Permite selecionar múltiplas imagens
+        quality: 1, // Qualidade da imagem
+        selectionLimit: 8 - selectedImages.length, // Limita novas seleções para não exceder 8
       });
 
       if (!result.canceled && result.assets) {
-        // Mapear os assets para um formato que inclua o nome do arquivo
-        const newImages = await Promise.all(result.assets.map(async (asset) => {
-          let fileName = asset.fileName || asset.uri.split('/').pop();
-          let fileType = asset.type;
-
-          // Tentar inferir o tipo do arquivo se não estiver presente (para compatibilidade)
-          if (!fileType) {
-            const fileInfo = await FileSystem.getInfoAsync(asset.uri);
-            if (fileInfo.exists) {
-              const extension = fileName.split('.').pop().toLowerCase();
-              if (extension === 'jpg' || extension === 'jpeg') fileType = 'image/jpeg';
-              else if (extension === 'png') fileType = 'image/png';
-              else if (extension === 'gif') fileType = 'image/gif';
-              else fileType = 'application/octet-stream'; 
-            }
-          }
-
-          return { uri: asset.uri, type: fileType, name: fileName };
-        }));
-
+        // Mapeia os assets para obter apenas as URIs e adiciona ao estado
+        const newImages = result.assets.map(asset => ({ uri: asset.uri, type: asset.type, name: asset.fileName || asset.uri.split('/').pop() }));
         setSelectedImages(prevImages => {
           const combinedImages = [...prevImages, ...newImages];
+          // Garante que não excede o limite de 8 imagens
           return combinedImages.slice(0, 8); 
         });
       }
@@ -108,25 +97,19 @@ export default function CreateReceitasScreen({ navigation }) {
     }
   };
 
+  // Função para remover uma imagem selecionada
   const removeImage = (uriToRemove) => {
     setSelectedImages(prevImages => prevImages.filter(image => image.uri !== uriToRemove));
   };
 
   const handleSubmitReceita = async () => {
-    if (!userToken || !userEmail || !currentUserId) {
-      Alert.alert('Erro', 'Você precisa estar logado para criar uma receita.');
-      navigation.navigate('Login');
-      return;
-    }
+    setLoading(true);
 
     if (!titulo || !conteudo) {
       Alert.alert('Erro', 'Por favor, preencha Título e Conteúdo da Receita.');
       return;
     }
 
-    setLoading(true);
-
-    try {
       const conteudoComYoutube = youtubeUrl ? `${conteudo}\n\n${youtubeUrl}` : conteudo;
     
       const formData = new FormData();
@@ -134,73 +117,52 @@ export default function CreateReceitasScreen({ navigation }) {
       formData.append('conteudo', conteudoComYoutube);
       formData.append('email', userEmail); 
       formData.append('tema', "Moda"); 
+      formData.append('subtemas[]', "subtema-moda-sustentavel");
 
-      const subtemasArray = ["subtema-moda-sustentavel"];
-      subtemasArray.forEach(subtema => {
-        formData.append('subtemas[]', subtema); // Notação de array
-      });
   
-      selectedImages.forEach((image, index) => {
-        formData.append('fotos', {
-          // Objeto com propriedades específicas
-          uri: image.uri,
-          name: image.name || `receita_img_${Date.now()}_${index}.jpg`,
-          type: image.type || 'image/jpeg'
+      for (const image of selectedImages) {
+        const fileUri = image.uri;
+        const fileName = image.name || fileUri.split('/').pop();
+        let fileType = image.type;
+        console.log(`Adicionando imagem: ${fileName}, tipo: ${fileType}, URI: ${fileUri}`);
+        formData.append('fotos', { 
+          uri: fileUri,
+          name: fileName,
+          type: 'image/jpeg', //tem que ser dinamico, mas aqui é um exemplo
         });
-      });
-
-      console.log('Enviando FormData com:', {
-        titulo,
-        conteudo,
-        email: userEmail,
-        tema: "Moda",
-        subtemas: subtemasArray,
-        imageCount: selectedImages.length
-      });
-  
-
-      console.log('Enviando para API:', {
-        titulo,
-        conteudo: conteudoComYoutube,
-        userEmail,
-        imageCount: selectedImages.length
-      });
-
+      }
       
+      try {
+       
+          // const response = await api.postForm('api/receitas', formData)
+          const response = await fetch(`${API_URL}/api/receitas`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'multipart/form-data',
+            },
+            body: formData,
+          });
+          console.log('Resposta da API ao criar receita:', await response.json());
 
-      const response = await api.post('/api/receitas', formData, {
-        headers: {
-          'Authorization': `Bearer ${userToken}`,
-          'Accept': 'application/json',
-        },
-        transformRequest: () => formData, 
-      });
-        
-  
-
-      console.log('Resposta da API ao criar receita:', response.data);
-
-      if (response.status === 201) {
-        Alert.alert('Sucesso', 'Receita criada!');
-        navigation.goBack();
+          if (response.status === 201) {
+            Alert.alert('Sucesso', 'Receita criada com sucesso!'); 
+            navigation.goBack(); 
+          } else {
+            Alert.alert('Erro', response.data?.message || 'Erro ao criar receita. Status: ' + response.status);
+          } 
+      } catch (error) {
+          console.log('Erro ao criar receita:', error);
+          console.error('Erro completo:', {
+            message: error.message,
+            code: error.code,
+            url: error.config?.url,
+            request: error.request,
+            response: error.response?.data
+          });
+          // Lança o erro para ser capturado pelo catch abaixo
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Erro detalhado:', {
-        message: error.message,
-        code: error.code,
-        request: error.request,
-        response: error.response?.data
-      });
-      if (error.code === 'ECONNABORTED') {
-        Alert.alert('Erro', 'O servidor demorou muito para responder');
-      } else if (error.response) {
-        Alert.alert('Erro', error.response.data?.error || 'Erro no servidor');
-      } else {
-        Alert.alert('Erro de Rede', 'Verifique sua conexão com a internet');
-      }
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -213,13 +175,14 @@ export default function CreateReceitasScreen({ navigation }) {
           <Ionicons name="arrow-back" size={24} color={primaryColor} />
         </TouchableOpacity>
 
-        <Text style={styles.header}>Criar Nova Receita</Text>
+        <StyledText style={styles.header}>Criar Nova Receita</StyledText>
 
         <View style={styles.formCard}>
           <TextInput
             style={styles.input}
             placeholder="Título da Receita"
             placeholderTextColor="#aaa"
+            fontfamily="poppins-bold"
             value={titulo}
             onChangeText={setTitulo}
             editable={!loading}
@@ -228,6 +191,7 @@ export default function CreateReceitasScreen({ navigation }) {
             style={[styles.input, styles.textArea]}
             placeholder="Conteúdo Detalhado da Receita"
             placeholderTextColor="#aaa"
+            fontfamily="poppins-bold"
             value={conteudo}
             onChangeText={setConteudo}
             multiline
@@ -238,6 +202,7 @@ export default function CreateReceitasScreen({ navigation }) {
             style={styles.input}
             placeholder="URL do Vídeo (YouTube, opcional)"
             placeholderTextColor="#aaa"
+            fontfamily="poppins-bold"
             value={youtubeUrl}
             onChangeText={setYoutubeUrl}
             keyboardType="url"
@@ -252,9 +217,9 @@ export default function CreateReceitasScreen({ navigation }) {
             disabled={loading || selectedImages.length >= 8} // Desabilita se já tem 8 imagens
           >
             <Ionicons name="image-outline" size={20} color="#fff" />
-            <Text style={styles.selectImageButtonText}>
+            <StyledText style={styles.selectImageButtonText}>
               Adicionar Imagens ({selectedImages.length}/8)
-            </Text>
+            </StyledText>
           </TouchableOpacity>
 
           {/* Pré-visualização das imagens selecionadas */}
@@ -287,7 +252,7 @@ export default function CreateReceitasScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>Publicar Receita</Text>
+              <StyledText style={styles.submitButtonText}>Publicar Receita</StyledText>
             )}
           </TouchableOpacity>
         </View>

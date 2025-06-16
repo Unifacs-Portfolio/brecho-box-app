@@ -195,7 +195,6 @@ export default function EditReceitaScreen({ navigation, route }) {
                 else fileType = 'application/octet-stream'; 
             }
         }
-
         formData.append('files', {
           uri: fileUri,
           name: fileName,
@@ -204,10 +203,9 @@ export default function EditReceitaScreen({ navigation, route }) {
       }
 
       console.log('Enviando FormData para a API de edição...');
-      const response = await api.put(`/api/receitas/${receitaId}`, formData, {
+      const response = await api.putForm(`api/receitas/${receitaId}`, formData, {
         headers: {
           'Authorization': `Bearer ${userToken}`,
-          'Content-Type': 'multipart/form-data', 
         },
       });
 

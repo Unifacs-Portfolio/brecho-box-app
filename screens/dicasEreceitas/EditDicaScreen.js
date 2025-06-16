@@ -74,6 +74,12 @@ export default function EditDicaScreen({ route, navigation }) {
       Alert.alert('Erro', 'Por favor, preencha Título e Conteúdo da Dica.');
       return;
     }
+
+    if (conteudo.length > 1000 || conteudo.length < 10) {
+      Alert.alert('Erro', 'O conteúdo da dica deve ter no máximo 1000 caracteres e no mínimo 10 caracteres.');
+      return;
+    }
+
     if (!userToken || !currentUserId) {
         Alert.alert('Erro', 'Você precisa estar logado para atualizar uma dica.');
         navigation.navigate('Login');
@@ -91,7 +97,7 @@ export default function EditDicaScreen({ route, navigation }) {
       };
 
  
-      const response = await api.put(`/api/dicas/${dicaId}`, payload, {
+      const response = await api.put(`api/dicas/${dicaId}`, payload, {
         headers: {
           Authorization: `Bearer ${userToken}`,
         },
