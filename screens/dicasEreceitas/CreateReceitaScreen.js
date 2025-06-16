@@ -40,14 +40,22 @@ export default function CreateReceitasScreen({ navigation }) {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]); 
 
-  async function schedulePushNotification(title, body) {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: title,
-        body: body,
-      },
-      trigger: { seconds: 1 }, // A notificação será exibida em 1 segundo
-    });
+  async function schedulePushNotification(title, body, data = {}) {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: title,
+          body: body,
+          sound: true,
+          vibrate: [0, 250, 250, 250],
+          data: data,
+        },
+        trigger: { seconds: 1 },
+      });
+      console.log('Notificação agendada com sucesso');
+    } catch (error) {
+      console.error('Erro ao agendar notificação:', error);
+    }
   }
   
 

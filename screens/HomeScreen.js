@@ -42,6 +42,8 @@ export default function Home() {
   const [isRecipeExpanded, setIsRecipeExpanded] = useState(false);
   const [userProfileImage, setUserProfileImage] = useState(null);
   const [dailyRecipeThumbnailUrl, setDailyRecipeThumbnailUrl] = useState(null);
+  const [expoPushToken, setExpoPushToken] = useState('');
+
 
   // Regex abrangente para encontrar URLs completas do YouTube (para extração do link do conteúdo)
   const youtubeUrlRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
@@ -58,45 +60,62 @@ export default function Home() {
 
   async function resgisterForPushNotificationsAsync() {
     let token;
+    
     if (Constants.isDevice) {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
+      
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
+      
       if (finalStatus !== 'granted') {
         Alert.alert('Permissão de Notificação', 'Precisamos da permissão para enviar notificações.');
-        return;
+        return null;
       }
+      
       try {
         token = (await Notifications.getExpoPushTokenAsync()).data;
         console.log('Token de notificação:', token);
+      
+        
       } catch (error) {
         console.error('Erro ao obter token de notificação:', error);
       }
     } else {
-      Alert.alert('Notificações', 'As Notificações push só funcionam em dispositivos fisicos!')
+      Alert.alert('Notificações', 'As notificações push só funcionam em dispositivos físicos!');
     }
+  
     if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync('default', {
+      await Notifications.setNotificationChannelAsync('default', {
         name: 'default',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#FF231F7C',
+        sound: 'default',
       });
     }
+  
     return token;
   }
-
-  async function schedulePushNotification(title, body) {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: title,
-        body: body
-      },
-      trigger: { seconds: 1 },
-    });
+  
+  async function schedulePushNotification(title, body, data = {}) {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: title,
+          body: body,
+          sound: true,
+          vibrate: [0, 250, 250, 250],
+          data: data,
+        },
+        trigger: { seconds: 1 },
+      });
+      console.log('Notificação agendada com sucesso');
+    } catch (error) {
+      console.error('Erro ao agendar notificação:', error);
+    }
   }
 
   const loadUserProfileImage = useCallback(async () => {
@@ -287,14 +306,25 @@ export default function Home() {
       setDailyRecipeThumbnailUrl(null); // Limpa se não houver receita
     }
 
-    resgisterForPushNotificationsAsync().then(token => setExpoPushToken(token));
-    notificationsListener.current = Notifications.addNotificationReceivedListener(notification => {
+    let notificationListener;
+  let responseListener;
+
+  const setupNotifications = async () => {
+    const token = await resgisterForPushNotificationsAsync();
+    if (token) {
+      setExpoPushToken(token);
+    }
+
+    notificationListener = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notificação recebida:', notification);
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+    responseListener = Notifications.addNotificationResponseReceivedListener(response => {
       console.log('Notificação respondida:', response);
     });
+  };
+
+  setupNotifications();
 
   }, [dailyRecipe, getYouTubeThumbnail]);
   useFocusEffect(
@@ -304,8 +334,12 @@ export default function Home() {
       fetchDailyContent();
 
       return () => {
+        if (notificationsListener.current){
         Notifications.removeNotificationSubscription(notificationsListener.current);
+      }
+      if (responseListener.current){
         Notifications.removeNotificationSubscription(responseListener.current);
+      }
       };
     }, [fetchUserName, loadUserProfileImage, fetchDailyContent])
   );

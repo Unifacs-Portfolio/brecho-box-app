@@ -3,6 +3,7 @@
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.RECORD_AUDIO"/>
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
   <queries>
@@ -13,6 +14,13 @@
     </intent>
   </queries>
   <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true">
+  <service
+  android:name="expo.modules.notifications.notifications.service.NotificationsService"
+  android:permission="android.permission.BIND_JOB_SERVICE"
+  android:exported="false" />
+    <receiver android:name="expo.modules.notifications.notifications.emitting.NotificationsDismissReceiver" />
+    <receiver android:name="expo.modules.notifications.notifications.emitting.NotificationsRebroadcaster" />
+    <receiver android:name="expo.modules.notifications.notifications.emitting.NotificationsBackgroundBroadcastReceiver" />
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="true"/>
     <meta-data android:name="expo.modules.updates.EXPO_RUNTIME_VERSION" android:value="@string/expo_runtime_version"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
