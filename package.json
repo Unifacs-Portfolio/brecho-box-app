@@ -24,6 +24,7 @@
     "expo-file-system": "~18.1.10",
     "expo-font": "~13.3.1",
     "expo-image-picker": "~16.1.4",
+    "expo-notifications": "~0.31.3",
     "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",
     "expo-updates": "^0.28.14",

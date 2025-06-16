@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, use } from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,21 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 import StyledText from '../../src/components/StyledText';
 
 const { width, height } = Dimensions.get('window');
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+})
+
 
 export default function ReceitasDeModa({ navigation }) {
   const [receitas, setReceitas] = useState([]);
@@ -30,6 +41,55 @@ export default function ReceitasDeModa({ navigation }) {
   const [userToken, setUserToken] = useState(null);
   const [isCurrentUserMonitor, setIsCurrentUserMonitor] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
+
+  const notificationsListener = Notifications.addNotificationReceivedListener(notifications => {
+    console.log('Notificação recebida:', notifications);
+  });
+
+  const responseListener = Notifications.addNotificationResponseReceivedListener(notificationsListener);
+
+  async function resgisterForPushNotificationsAsync() {
+    let token;
+    if (Constants.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        Alert.alert('Permissão de Notificação','Precisamos da permissão para enviar notificações.');
+        return;
+      }
+      try{
+        token = (await Notifications.getExpoPushTokenAsync()).data;
+        console.log('Token de notificação:', token);
+      } catch (error) {
+        console.error('Erro ao obter token de notificação:', error);
+      }
+     } else {
+        Alert.alert('Notificações', 'As Notificações push só funcionam em dispositivos fisicos!')
+      }
+        if (Platform.OS === 'android') {
+          Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+          });
+        }
+        return token;
+      }
+
+      async function schedulePushNotification(title, body){
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: title,
+            body: body
+          },
+          trigger: { seconds: 1 },
+        });
+      }
 
   // Função para navegar entre as imagens e vídeo
   const handleImagePress = (receitaId, totalImages, hasVideo, currentMedia) => {
@@ -237,11 +297,25 @@ export default function ReceitasDeModa({ navigation }) {
   useEffect(() => {
     fetchUserData();
     fetchReceitas();
-    const unsubscribe = navigation.addListener('focus', () => {
-      fetchUserData();
-      fetchReceitas();
+
+    resgisterForPushNotificationsAsync().then(token => setExpoPushToken(token));
+    notificationsListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notificação recebida:', notification);
     });
-    return unsubscribe;
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notificação respondida:', response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationsListener.current);
+      Notifications.removeNotificationSubscription(responseListener.current);
+      const unsubscribe = navigation.addListener('focus', () => {
+        fetchUserData();
+        fetchReceitas();
+      });
+      return unsubscribe;
+    };
   }, [fetchUserData, fetchReceitas, navigation]);
 
   const handleRefresh = useCallback(() => {

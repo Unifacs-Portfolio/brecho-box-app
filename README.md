@@ -31,9 +31,9 @@ Utilize Visual Studio Code ou um editor de código equivalente.
 
 **Execute os comandos**
 
-  `npm install -force`
+  `yarn add`
 
-  `npm install expo-modules-core -force`
+  `yarn add expo-modules-core`
 
 * Certifique-se de que o NodeModules esteja instalado corretamente para garantir que todas as bibliotecas necessárias estejam disponíveis.
 

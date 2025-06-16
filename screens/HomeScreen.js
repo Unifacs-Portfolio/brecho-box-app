@@ -9,14 +9,24 @@ import {
   Dimensions,
   Image,
   ActivityIndicator,
-  Linking, 
+  Linking,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../src/services/api';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 import StyledText from '../src/components/StyledText';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+})
 
 const { width, height } = Dimensions.get('window');
 const primaryColor = '#464193';
@@ -31,7 +41,7 @@ export default function Home() {
   const [isTipExpanded, setIsTipExpanded] = useState(false);
   const [isRecipeExpanded, setIsRecipeExpanded] = useState(false);
   const [userProfileImage, setUserProfileImage] = useState(null);
-  const [dailyRecipeThumbnailUrl, setDailyRecipeThumbnailUrl] = useState(null); 
+  const [dailyRecipeThumbnailUrl, setDailyRecipeThumbnailUrl] = useState(null);
 
   // Regex abrangente para encontrar URLs completas do YouTube (para extração do link do conteúdo)
   const youtubeUrlRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
@@ -39,6 +49,55 @@ export default function Home() {
   const hasNumberInTitle = (item) => {
     return item && item.titulo && /\d/.test(item.titulo);
   };
+
+  const notificationsListener = Notifications.addNotificationReceivedListener(notifications => {
+    console.log('Notificação recebida:', notifications);
+  });
+
+  const responseListener = Notifications.addNotificationResponseReceivedListener(notificationsListener);
+
+  async function resgisterForPushNotificationsAsync() {
+    let token;
+    if (Constants.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        Alert.alert('Permissão de Notificação', 'Precisamos da permissão para enviar notificações.');
+        return;
+      }
+      try {
+        token = (await Notifications.getExpoPushTokenAsync()).data;
+        console.log('Token de notificação:', token);
+      } catch (error) {
+        console.error('Erro ao obter token de notificação:', error);
+      }
+    } else {
+      Alert.alert('Notificações', 'As Notificações push só funcionam em dispositivos fisicos!')
+    }
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    }
+    return token;
+  }
+
+  async function schedulePushNotification(title, body) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: title,
+        body: body
+      },
+      trigger: { seconds: 1 },
+    });
+  }
 
   const loadUserProfileImage = useCallback(async () => {
     try {
@@ -107,7 +166,7 @@ export default function Home() {
       return null;
     }
     const match = fullYouTubeUrl.match(youtubeUrlRegex);
-    const videoId = (match && match[2]) ? match[2] : null; 
+    const videoId = (match && match[2]) ? match[2] : null;
 
     if (videoId) {
       return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
@@ -128,9 +187,9 @@ export default function Home() {
       return { cleanedContent: '', youtubeLink: null };
     }
     const match = content.match(youtubeUrlRegex);
-    const youtubeLink = match ? match[1] : null; 
-    const globalYoutubeUrlRegex = new RegExp(youtubeUrlRegex.source, 'gi'); 
-    const cleanedContent = content.replace(globalYoutubeUrlRegex, '').trim(); 
+    const youtubeLink = match ? match[1] : null;
+    const globalYoutubeUrlRegex = new RegExp(youtubeUrlRegex.source, 'gi');
+    const cleanedContent = content.replace(globalYoutubeUrlRegex, '').trim();
     return { cleanedContent, youtubeLink };
   };
 
@@ -174,7 +233,7 @@ export default function Home() {
       const availableTips = allTipsFromApi.filter(hasNumberInTitle);
       const availableRecipes = allRecipesFromApi.filter(recipe => {
         const { youtubeLink } = extractYouTubeUrlAndCleanContent(recipe.conteudo);
-        return hasNumberInTitle(recipe) && youtubeLink && getYouTubeThumbnail(youtubeLink); 
+        return hasNumberInTitle(recipe) && youtubeLink && getYouTubeThumbnail(youtubeLink);
       });
 
       if (lastFetchDate === today && savedDailyTipTitle && savedDailyRecipeTitle) {
@@ -227,13 +286,27 @@ export default function Home() {
     } else {
       setDailyRecipeThumbnailUrl(null); // Limpa se não houver receita
     }
+
+    resgisterForPushNotificationsAsync().then(token => setExpoPushToken(token));
+    notificationsListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notificação recebida:', notification);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notificação respondida:', response);
+    });
+
   }, [dailyRecipe, getYouTubeThumbnail]);
   useFocusEffect(
     useCallback(() => {
       fetchUserName();
       loadUserProfileImage();
       fetchDailyContent();
-      return () => {};
+
+      return () => {
+        Notifications.removeNotificationSubscription(notificationsListener.current);
+        Notifications.removeNotificationSubscription(responseListener.current);
+      };
     }, [fetchUserName, loadUserProfileImage, fetchDailyContent])
   );
 

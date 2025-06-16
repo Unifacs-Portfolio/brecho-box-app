@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import StyledText from '../../src/components/StyledText';
 
+
 const { width, height } = Dimensions.get('window');
 const primaryColor = '#464193'; 
 const dangerColor = '#D9534F'; 
@@ -30,6 +31,7 @@ export default function DicasDeModa({ navigation }) {
   const [userToken, setUserToken] = useState(null);
   const [userEmail, setUserEmail] = useState(null); 
   const [isCurrentUserMonitor, setIsCurrentUserMonitor] = useState(false); 
+
 
   // Função para extrair URLs de um texto
   const extractAndOpenURL = (text) => {

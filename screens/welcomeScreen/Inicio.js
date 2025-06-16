@@ -1,28 +1,30 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
   Image,
-  Dimensions  
+  Dimensions
 } from 'react-native';
 
 import StyledText from '../../src/components/StyledText';
 
-const { height } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
 export default function Inicio({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.topCurve}>
         <Image
-          source={require('../../assets/icon.jpeg')} 
+          source={require('../../assets/icon.jpeg')}
           style={styles.logo}
           resizeMode="contain"
         />
-        <StyledText style={styles.title}>BrechóBox</StyledText>
-        <StyledText style={styles.slogan}>PENSE FORA DA CAIXA</StyledText>
+        <View style={styles.titleSloganContainer}>
+          <StyledText style={styles.title}>BrechóBox</StyledText>
+          <StyledText style={styles.slogan}>PENSE FORA DA CAIXA</StyledText>
+        </View>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -44,7 +46,7 @@ export default function Inicio({ navigation }) {
   );
 }
 
-const primaryColor = '#473da1'; // Roxo base do logo 
+const primaryColor = '#473da1'; // Roxo base do logo
 
 const styles = StyleSheet.create({
   container: {
@@ -53,29 +55,45 @@ const styles = StyleSheet.create({
   },
 
   topCurve: {
-    backgroundColor: '#473da1',
-    height: '50%',
+    backgroundColor: primaryColor, 
+    height: height * 0.5,
     borderBottomLeftRadius: 200,
     borderBottomRightRadius: 200,
     alignItems: 'center',
-    paddingTop: 60, 
+    justifyContent: 'flex-end', 
+    paddingBottom: height * 0.05, 
+    paddingTop: height * 0.05, 
   },
 
   logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 10,
+    width: width * 0.4, 
+    height: width * 0.4,
+    marginBottom: 0, 
+  },
+
+  titleSloganContainer: {
+    alignItems: 'center',
+    marginTop: height * 0.01, 
+  },
+
+  title: {
+    color: '#ffffff',
+    fontSize: width * 0.08, 
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 
   slogan: {
     color: '#ffffff',
-    fontSize: 15,
+    fontSize: width * 0.035, 
     fontWeight: '500',
     marginTop: 5,
+    textAlign: 'center',
+    paddingHorizontal: 15,
   },
 
   buttonContainer: {
-    marginTop: 60,
+    marginTop: height * 0.07,
     alignItems: 'center',
   },
 
@@ -91,7 +109,7 @@ const styles = StyleSheet.create({
 
   outlinedButtonText: {
     color: primaryColor,
-    fontSize: 18,
+    fontSize: width * 0.045,
     fontWeight: '700',
   },
 
@@ -106,15 +124,7 @@ const styles = StyleSheet.create({
 
   filledButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: width * 0.045,
     fontWeight: '700',
   },
-
-  title: {
-    color: '#ffffff',
-    fontSize: 40,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
 });
-

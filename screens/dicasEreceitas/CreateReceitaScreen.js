@@ -20,6 +20,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker'; 
 import * as FileSystem from 'expo-file-system'; 
 import api from '../../src/services/api';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 import StyledText from '../../src/components/StyledText';
 
@@ -37,6 +39,17 @@ export default function CreateReceitasScreen({ navigation }) {
   const [userEmail, setUserEmail] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]); 
+
+  async function schedulePushNotification(title, body) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: title,
+        body: body,
+      },
+      trigger: { seconds: 1 }, // A notificação será exibida em 1 segundo
+    });
+  }
+  
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -64,7 +77,6 @@ export default function CreateReceitasScreen({ navigation }) {
     fetchUserData();
   }, [navigation]);
 
- 
 
   // Função para selecionar imagens da galeria
   const handlePickImage = async () => {
@@ -145,7 +157,8 @@ export default function CreateReceitasScreen({ navigation }) {
           console.log('Resposta da API ao criar receita:', await response.json());
 
           if (response.status === 201) {
-            Alert.alert('Sucesso', 'Receita criada com sucesso!'); 
+            Alert.alert('Sucesso', 'Receita criada com sucesso!');
+            await schedulePushNotification('Nova Receita', `Sua receita "${titulo}" foi criada com sucesso!`); 
             navigation.goBack(); 
           } else {
             Alert.alert('Erro', response.data?.message || 'Erro ao criar receita. Status: ' + response.status);
@@ -159,7 +172,6 @@ export default function CreateReceitasScreen({ navigation }) {
             request: error.request,
             response: error.response?.data
           });
-          // Lança o erro para ser capturado pelo catch abaixo
       } finally {
         setLoading(false);
       }

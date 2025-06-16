@@ -15,6 +15,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import api from '../../src/services/api'; 
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 import StyledText from '../../src/components/StyledText';
 
@@ -28,6 +30,16 @@ export default function CreateDicaScreen({ navigation }) {
   const [userToken, setUserToken] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null); 
+
+  async function schedulePushNotification(title, body) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: title,
+        body: body,
+      },
+      trigger: { seconds: 1 }, // A notificação será exibida em 1 segundo
+    });
+  }
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -96,6 +108,7 @@ export default function CreateDicaScreen({ navigation }) {
 
       if (response.status === 201) { 
         Alert.alert('Sucesso', 'Dica criada com sucesso!');
+        schedulePushNotification('Dica Criada', `A dica "${payload.titulo}" foi criada com sucesso!`);
         navigation.goBack(); // Volta para a tela anterior
       } else {
         console.error('Erro na resposta da API ao criar dica (status não 201):', response.status, response.data);
