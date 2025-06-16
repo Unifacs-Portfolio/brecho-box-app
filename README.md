@@ -31,11 +31,15 @@ Utilize Visual Studio Code ou um editor de código equivalente.
 
 **Execute os comandos**
 
-  `npm install`
+  `yarn add`
 
-  `npm install expo-modules-core`
+  `yarn add expo-modules-core`
 
 * Certifique-se de que o NodeModules esteja instalado corretamente para garantir que todas as bibliotecas necessárias estejam disponíveis.
+
+* Conta de monitor para teste de criação de receita e dicas:
+
+`email: brechobox@monitor.com | senha: 123321`
 
 
 ## Beneficios do Projeto :

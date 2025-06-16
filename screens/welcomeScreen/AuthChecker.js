@@ -12,47 +12,31 @@ export default function AuthChecker({ navigation }) {
         const token = await AsyncStorage.getItem('userToken');
         const manterConectado = await AsyncStorage.getItem('@manterConectado');
         const expiration = await AsyncStorage.getItem('@tokenExpiration');
-        
-        // Se não tem token ou não está marcado para manter conectado, vai para Login
-        if (!token || manterConectado !== 'true') {
-          navigation.replace('Inicio');
+
+        if (!token || manterConectado !== 'true' || (expiration && Date.now() > parseInt(expiration))) {
+          // Se não houver token, ou manterConectado não for 'true', ou o token estiver expirado
+          navigation.navigate('Inicio'); // Redireciona para 'Inicio'
           return;
         }
 
-        // Verifica se o token expirou
-        if (expiration && Date.now() > parseInt(expiration)) {
-          await AsyncStorage.removeItem('userToken');
-          await AsyncStorage.removeItem('@tokenExpiration');
-          navigation.replace('Login');
-          return;
-        }
+        // Tenta validar o token com a API
+        await api.get('/api/usuario', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-        // Verifica com a API se o token ainda é válido
-        try {
-          await api.get('/api/usuario', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          // Se chegou aqui, o token é válido
-          navigation.replace('Home');
-        } catch (error) {
-          // Se o status for 401 (não autorizado), remove o token e redireciona
-          if (error?.status === 401) {
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('@tokenExpiration');
-          }
-          navigation.replace('Login');
-        }
+        // Se a validação for bem-sucedida, navega para as abas principais do aplicativo
+        navigation.navigate('AppTabs');
       } catch (error) {
         console.error('Erro ao verificar autenticação:', error);
-        navigation.replace('Login');
+        // Em caso de erro na validação ou API, redireciona para 'Inicio'
+        navigation.navigate('Inicio');
       } finally {
         setLoading(false);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [navigation]);
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

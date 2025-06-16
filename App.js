@@ -1,55 +1,80 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { StatusBar, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as Font from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 
-import Inicio from './screens/welcomeScreen/Inicio';
-import RegistroScreen from './screens/ResgistroScreen';
-import HomeScreen from './screens/HomeScreen';
-import Quiz from './screens/quiz';
-import Perfil from './screens/perfil/Perfil';
-import ModificarDados from './screens/perfil/ModificarDados';
-import Modificacoes from './screens/perfil/Modificacoes';
-import ReceitasDeModa from './screens/ReceitasDeModa';
-import DicasDeModa from './screens/DicasDeModa';
-import Login from './screens/Login';
-import ForgotPassword from './screens/ForgotPassword';
-import AuthChecker from './screens/welcomeScreen/AuthChecker';
+// Importações dos seus stacks e telas
+import AuthStack from './src/navigation/AuthStack';
+import AppTabs from './src/navigation/AppTabs';
+import OutrosStack from './src/navigation/OutrosStacks';
+import DicasOuReceitasStack from './src/navigation/DicasOuReceitasStack';
+import ConfiguracoesStack from './src/navigation/ConfiguracoesStack';
 
 
-const Stack = createNativeStackNavigator();
+SplashScreen.preventAutoHideAsync();
+
+const RootStack = createNativeStackNavigator();
 
 export default function App() {
+  const [appIsReady, setAppIsReady] = useState(false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Carrega todas as fontes Poppins.
+        // Caminhos corrigidos assumindo que App.js está na raiz do projeto.
+        await Font.loadAsync({
+          'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
+          'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
+          'Poppins-SemiBold': require('./assets/fonts/Poppins-SemiBold.ttf'),
+          'Poppins-Medium': require('./assets/fonts/Poppins-Medium.ttf'),
+          'Poppins-Light': require('./assets/fonts/Poppins-Light.ttf'),
+          'Poppins-ExtraLight': require('./assets/fonts/Poppins-ExtraLight.ttf'),
+          'Poppins-Thin': require('./assets/fonts/Poppins-Thin.ttf'),
+          'Poppins-Black': require('./assets/fonts/Poppins-Black.ttf'),
+          'Poppins-Italic': require('./assets/fonts/Poppins-Italic.ttf'),
+          'Poppins-BoldItalic': require('./assets/fonts/Poppins-BoldItalic.ttf'),
+          'Poppins-SemiBoldItalic': require('./assets/fonts/Poppins-SemiBoldItalic.ttf'),
+          'Poppins-MediumItalic': require('./assets/fonts/Poppins-MediumItalic.ttf'),
+          'Poppins-LightItalic': require('./assets/fonts/Poppins-LightItalic.ttf'),
+          'Poppins-ExtraLightItalic': require('./assets/fonts/Poppins-ExtraLightItalic.ttf'),
+          'Poppins-ThinItalic': require('./assets/fonts/Poppins-ThinItalic.ttf'),
+          'Poppins-BlackItalic': require('./assets/fonts/Poppins-BlackItalic.ttf'),
+        });
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
+  }, []);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
+    return null;
+  }
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="AuthChecker">
-        <Stack.Screen
-          name="AuthChecker"
-          component={AuthChecker}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen name="Inicio" component={Inicio} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name='Registro' component={RegistroScreen} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="Home" component={HomeScreen} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="Quiz" component={Quiz} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="Perfil" component={Perfil} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="ModificarDados" component={ModificarDados} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="Modificacoes" component={Modificacoes} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="ReceitasDeModa" component={ReceitasDeModa} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="DicasDeModa" component={DicasDeModa} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="Login" component={Login} 
-          options={{ headerShown: false }}/>
-        <Stack.Screen name="ForgotPassword" component={ForgotPassword} 
-          options={{ headerShown: false }}/>
-      </Stack.Navigator>
-    </NavigationContainer>
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <NavigationContainer>
+        <StatusBar backgroundColor="#464193" barStyle="light-content" />
+        <RootStack.Navigator screenOptions={{ headerShown: false }}>
+          <RootStack.Screen name="AuthStack" component={AuthStack} />
+          <RootStack.Screen name="AppTabs" component={AppTabs} />
+          <RootStack.Screen name="OutrosStack" component={OutrosStack} />
+          <RootStack.Screen name="DicasOuReceitasStack" component={DicasOuReceitasStack} />
+          <RootStack.Screen name="ConfiguracoesStack" component={ConfiguracoesStack} />
+        </RootStack.Navigator>
+      </NavigationContainer>
+    </View>
   );
 }

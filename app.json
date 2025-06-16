@@ -34,7 +34,15 @@
       "favicon": "./assets/icon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#25292e",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
+      ]
     ],
     "extra": {
       "eas": {

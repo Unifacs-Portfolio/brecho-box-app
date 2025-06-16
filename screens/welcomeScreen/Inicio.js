@@ -1,17 +1,30 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Dimensions
+} from 'react-native';
+
+import StyledText from '../../src/components/StyledText';
+
+const { height, width } = Dimensions.get('window');
 
 export default function Inicio({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.topCurve}>
         <Image
-          source={require('../../assets/icon.jpeg')} 
+          source={require('../../assets/icon.jpeg')}
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.title}>BrechóBox</Text>
-        <Text style={styles.slogan}>PENSE FORA DA CAIXA</Text>
+        <View style={styles.titleSloganContainer}>
+          <StyledText style={styles.title}>BrechóBox</StyledText>
+          <StyledText style={styles.slogan}>PENSE FORA DA CAIXA</StyledText>
+        </View>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -19,21 +32,21 @@ export default function Inicio({ navigation }) {
           style={styles.outlinedButton}
           onPress={() => navigation.navigate('Registro')}
         >
-          <Text style={styles.outlinedButtonText}>Crie seu Perfil</Text>
+          <StyledText style={styles.outlinedButtonText}>Crie seu Perfil</StyledText>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.filledButton}
           onPress={() => navigation.navigate('Login')}
         >
-          <Text style={styles.filledButtonText}>Entrar</Text>
+          <StyledText style={styles.filledButtonText}>Entrar</StyledText>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const primaryColor = '#473da1'; // Roxo base do logo 
+const primaryColor = '#473da1'; // Roxo base do logo
 
 const styles = StyleSheet.create({
   container: {
@@ -42,67 +55,76 @@ const styles = StyleSheet.create({
   },
 
   topCurve: {
-    backgroundColor: '#473da1',
-    height: '50%',
+    backgroundColor: primaryColor, 
+    height: height * 0.5,
     borderBottomLeftRadius: 200,
     borderBottomRightRadius: 200,
     alignItems: 'center',
-    paddingTop: 60, 
+    justifyContent: 'flex-end', 
+    paddingBottom: height * 0.05, 
+    paddingTop: height * 0.05, 
   },
 
   logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 10,
+    width: width * 0.4, 
+    height: width * 0.4,
+    marginBottom: 0, 
   },
 
-  slogan: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '500',
-    marginTop: 5,
-  },
-
-  buttonContainer: {
-    marginTop: 60,
+  titleSloganContainer: {
     alignItems: 'center',
-  },
-
-  outlinedButton: {
-    width: '80%',
-    paddingVertical: 14,
-    borderRadius: 10,
-    borderColor: primaryColor,
-    borderWidth: 2,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-
-  outlinedButtonText: {
-    color: primaryColor,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
-  filledButton: {
-    width: '80%',
-    paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: primaryColor,
-    alignItems: 'center',
-  },
-
-  filledButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    marginTop: height * 0.01, 
   },
 
   title: {
     color: '#ffffff',
-    fontSize: 40,
+    fontSize: width * 0.08, 
     fontWeight: 'bold',
-    marginTop: 10,
+    textAlign: 'center',
+  },
+
+  slogan: {
+    color: '#ffffff',
+    fontSize: width * 0.035, 
+    fontWeight: '500',
+    marginTop: 5,
+    textAlign: 'center',
+    paddingHorizontal: 15,
+  },
+
+  buttonContainer: {
+    marginTop: height * 0.07,
+    alignItems: 'center',
+  },
+
+  outlinedButton: {
+    borderColor: primaryColor,
+    borderWidth: 2,
+    paddingVertical: height * 0.02,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 15,
+    width: '80%',
+  },
+
+  outlinedButtonText: {
+    color: primaryColor,
+    fontSize: width * 0.045,
+    fontWeight: '700',
+  },
+
+  filledButton: {
+    backgroundColor: primaryColor,
+    paddingVertical: height * 0.02,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 15,
+    width: '80%',
+  },
+
+  filledButtonText: {
+    color: '#fff',
+    fontSize: width * 0.045,
+    fontWeight: '700',
   },
 });
-
