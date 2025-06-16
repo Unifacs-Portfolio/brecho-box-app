@@ -336,12 +336,6 @@ export default function Perfil() {
             <StyledText style={styles.quizButtonText}>Jogar Quiz</StyledText> 
         </TouchableOpacity> 
 
-        <TouchableOpacity
-          style={styles.settingsButtonFloating}
-          onPress={() => navigation.navigate('ConfiguracoesStack', { screen: 'ConfiguracoesMain' })} 
-        >
-          <Ionicons name="settings" size={28} color={'#fff'} />
-        </TouchableOpacity>
       </View> 
     </View> 
   ); 
@@ -464,7 +458,7 @@ const styles = StyleSheet.create({
     paddingVertical: height * 0.02, 
     paddingHorizontal: width * 0.08, 
     borderRadius: 20, 
-    marginTop: height * 0.03, 
+    marginTop: height * 0.01, 
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 }, 
     shadowOpacity: 0.25, 
@@ -478,20 +472,4 @@ const styles = StyleSheet.create({
     fontWeight: '600', 
     marginLeft: 10, 
   }, 
-  settingsButtonFloating: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: primaryColor,
-    borderRadius: 30,
-    width: 60,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
 });
