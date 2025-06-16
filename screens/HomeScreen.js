@@ -176,6 +176,13 @@ export default function Home() {
           } else {
             setUserName('Usuário');
           }
+          const apiUserImage = response.data?.user?.foto_usuario;
+          if (apiUserImage) {
+            setUserProfileImage({ uri: apiUserImage }); 
+            await AsyncStorage.setItem(`@userImage_${userEmail}`, apiUserImage);
+          } else {
+            setUserProfileImage(require('../assets/iconsLogin/carinhabranco.jpg'));
+          }
         } catch (apiError) {
           console.error('[fetchUserName] Erro ao buscar nome do usuário da API:', apiError.response?.data || apiError.message);
           setUserName('Usuário');

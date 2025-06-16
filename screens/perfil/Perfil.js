@@ -143,9 +143,9 @@ export default function Perfil() {
           nome: response.data.user.nome 
         })); 
       } 
-      if(response.data?.user?.Avatar){ 
-        setUserImage({ uri: response.data.user.Avatar }); 
-        await AsyncStorage.setItem(`@userImage_${email}`, response.data.user.Avatar); 
+      if(response.data?.user?.foto_usuario){ 
+        setUserImage({ uri: response.data.user.foto_usuario }); 
+        await AsyncStorage.setItem(`@userImage_${email}`, response.data.user.foto_usuario); 
       }
 
     } catch (error) { 
