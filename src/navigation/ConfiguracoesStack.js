@@ -1,11 +1,12 @@
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Modificacoes from '../../screens/opções/Modificacoes';
 import ModificarDados from '../../screens/opções/ModificarDados'; 
 import AjudaScreen from '../../screens/opções/AjudaScreen';
 import SobreScreen from '../../screens/opções/SobreScreen';
 
 
-const Stack = createStackNavigator();
+
+const Stack = createNativeStackNavigator();
 
 export default function ConfiguracoesStack() {
   return (

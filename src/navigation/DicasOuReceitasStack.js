@@ -1,5 +1,5 @@
 // DicasOuReceitasStack.js
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DicasDeModa from '../../screens/dicasEreceitas/DicasDeModa';
 import ReceitasDeModa from '../../screens/dicasEreceitas/ReceitasDeModa';
 import EscolhaDicasReceitas from '../../screens/dicasEreceitas/EscolhaDicasReceitas';
@@ -9,7 +9,7 @@ import EditReceitaScreen from '../../screens/dicasEreceitas/EditReceitaScreen';
 import EditDicaScreen from '../../screens/dicasEreceitas/EditDicaScreen';
 
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function DicasOuReceitasStack() {
   return (
