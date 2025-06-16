@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Image,
   ActivityIndicator,
   Linking,
+
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,7 +45,7 @@ export default function Home() {
   const [dailyRecipeThumbnailUrl, setDailyRecipeThumbnailUrl] = useState(null);
   const [expoPushToken, setExpoPushToken] = useState('');
 
-
+    const notificationListener = useRef();
   // Regex abrangente para encontrar URLs completas do YouTube (para extração do link do conteúdo)
   const youtubeUrlRegex = /(https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([a-zA-Z0-9_-]{11}))/i;
 
@@ -59,34 +60,29 @@ export default function Home() {
   const responseListener = Notifications.addNotificationResponseReceivedListener(notificationsListener);
 
   async function resgisterForPushNotificationsAsync() {
-    let token;
-    
-    if (Constants.isDevice) {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      
-      if (finalStatus !== 'granted') {
-        Alert.alert('Permissão de Notificação', 'Precisamos da permissão para enviar notificações.');
-        return null;
-      }
-      
-      try {
-        token = (await Notifications.getExpoPushTokenAsync()).data;
-        console.log('Token de notificação:', token);
-      
-        
-      } catch (error) {
-        console.error('Erro ao obter token de notificação:', error);
-      }
-    } else {
-      Alert.alert('Notificações', 'As notificações push só funcionam em dispositivos físicos!');
-    }
+  let token;
   
+  // Adicione esta verificação para permitir no emulador durante desenvolvimento
+  const isDevelopment = __DEV__;
+  
+  if (Constants.isDevice || isDevelopment) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    
+    if (finalStatus !== 'granted') {
+      if (!isDevelopment) { // Só mostra alerta em produção
+        Alert.alert('Permissão de Notificação', 'Precisamos da permissão para enviar notificações.');
+      }
+      return null;
+    }
+  }
+  
+    // Configuração do canal para Android
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'default',
@@ -94,12 +90,25 @@ export default function Home() {
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#FF231F7C',
         sound: 'default',
+        showBadge: true,
+        enableLights: true,
+        enableVibrate: true,
       });
     }
   
-    return token;
-  }
+    // Obter token
+    try {
+      const token = (await Notifications.getExpoPushTokenAsync({
+        projectId: '76a68f84-e4fe-41fd-8afd-9d4eddea0a75' // Substituído pelo projectId real
+      })).data;
   
+      console.log('Token de notificação gerado:', token);
+      return token;
+    } catch (error) {
+      console.error('Erro ao obter token:', error);
+      return null;
+    }
+  }
   async function schedulePushNotification(title, body, data = {}) {
     try {
       await Notifications.scheduleNotificationAsync({
@@ -303,29 +312,35 @@ export default function Home() {
       const url = youtubeLink ? getYouTubeThumbnail(youtubeLink) : null;
       setDailyRecipeThumbnailUrl(url);
     } else {
-      setDailyRecipeThumbnailUrl(null); // Limpa se não houver receita
+      setDailyRecipeThumbnailUrl(null);
     }
 
-    let notificationListener;
-  let responseListener;
+    // Configurar listeners de notificação
+    const setupNotifications = async () => {
+      const token = await resgisterForPushNotificationsAsync();
+      if (token) {
+        setExpoPushToken(token);
+      }
 
-  const setupNotifications = async () => {
-    const token = await resgisterForPushNotificationsAsync();
-    if (token) {
-      setExpoPushToken(token);
-    }
+      notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+        console.log('Notificação recebida:', notification);
+      });
 
-    notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notificação recebida:', notification);
-    });
+      responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+        console.log('Notificação respondida:', response);
+      });
+    };
 
-    responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notificação respondida:', response);
-    });
-  };
+    setupNotifications();
 
-  setupNotifications();
-
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
   }, [dailyRecipe, getYouTubeThumbnail]);
   useFocusEffect(
     useCallback(() => {
@@ -334,12 +349,6 @@ export default function Home() {
       fetchDailyContent();
 
       return () => {
-        if (notificationsListener.current){
-        Notifications.removeNotificationSubscription(notificationsListener.current);
-      }
-      if (responseListener.current){
-        Notifications.removeNotificationSubscription(responseListener.current);
-      }
       };
     }, [fetchUserName, loadUserProfileImage, fetchDailyContent])
   );

@@ -143,6 +143,10 @@ export default function Perfil() {
           nome: response.data.user.nome 
         })); 
       } 
+      if(response.data?.user?.Avatar){ 
+        setUserImage({ uri: response.data.user.Avatar }); 
+        await AsyncStorage.setItem(`@userImage_${email}`, response.data.user.Avatar); 
+      }
 
     } catch (error) { 
       console.error('Erro ao buscar dados do usuário:', error.response?.data || error.message); 

@@ -37,6 +37,10 @@ Utilize Visual Studio Code ou um editor de código equivalente.
 
 * Certifique-se de que o NodeModules esteja instalado corretamente para garantir que todas as bibliotecas necessárias estejam disponíveis.
 
+* Conta de monitor para teste de criação de receita e dicas:
+
+`email: brechobox@monitor.com | senha: 123321`
+
 
 ## Beneficios do Projeto :
 * Incentivar a conscientização e educação dos jovens sobre práticas sustentáveis no dia a dia sobre moda.
