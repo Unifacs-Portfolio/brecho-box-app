@@ -251,6 +251,7 @@ export default function EditReceitaScreen({ navigation, route }) {
             style={styles.input}
             placeholder="Título da Receita"
             placeholderTextColor="#aaa"
+            textColor="#000000"
             fontfamily="poppins-bold"
             value={titulo}
             onChangeText={setTitulo}
@@ -260,6 +261,7 @@ export default function EditReceitaScreen({ navigation, route }) {
             style={[styles.input, styles.textArea]}
             placeholder="Conteúdo Detalhado da Receita"
             placeholderTextColor="#aaa"
+            textColor="#000000"
             fontfamily="poppins-bold"
             value={conteudo}
             onChangeText={setConteudo}
@@ -272,6 +274,7 @@ export default function EditReceitaScreen({ navigation, route }) {
             placeholder="URL do Vídeo (YouTube, opcional)"
             placeholderTextColor="#aaa"
             fontfamily="poppins-bold"
+            textColor="#000000"
             value={youtubeUrl}
             onChangeText={setYoutubeUrl}
             keyboardType="url"

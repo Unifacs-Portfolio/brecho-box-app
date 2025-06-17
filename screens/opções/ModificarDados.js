@@ -201,6 +201,7 @@ export default function ModificarDados({ navigation, route }) {
           style={styles.input}
           placeholder="Nome"
           fontfamily="Poppins"
+          textColor="#000000"
           value={nome}
           onChangeText={setNome}
           editable={!loading}
@@ -214,6 +215,7 @@ export default function ModificarDados({ navigation, route }) {
           style={[styles.input, { color: '#666' }]}
           placeholder="E-mail"
           fontfamily="Poppins"
+          textColor="#000000"
           value={email}
           editable={false}
         />
@@ -227,6 +229,7 @@ export default function ModificarDados({ navigation, route }) {
           placeholder="Telefone"
           keyboardType="phone-pad"
           fontfamily="Poppins"
+          textColor="#000000"
           value={telefone}
           onChangeText={text => setTelefone(formatarTelefone(text))}
           editable={!loading}
@@ -241,6 +244,7 @@ export default function ModificarDados({ navigation, route }) {
           style={styles.input}
           placeholder="Nova senha ou senha atual"
           fontfamily="Poppins"
+          textColor="#000000"
           secureTextEntry={!mostrarSenha}
           value={senha}
           onChangeText={setSenha}

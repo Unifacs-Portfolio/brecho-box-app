@@ -150,6 +150,7 @@ export default function RegistroScreen({ navigation }) {
               placeholder="Nome"
               placeholderTextColor="#aaa"
               fontfamily="Poppins-Regular"
+              textColor="#000000"
               style={styles.inputField}
               value={nome}
               onChangeText={setNome}
@@ -167,6 +168,7 @@ export default function RegistroScreen({ navigation }) {
             <TextInput
               placeholder="E-mail"
               placeholderTextColor="#aaa"
+              textColor="#000000"
               fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={email}
@@ -187,6 +189,7 @@ export default function RegistroScreen({ navigation }) {
             <TextInput
               placeholder="Telefone"
               placeholderTextColor="#aaa"
+              textColor="#000000"
               fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={telefone}
@@ -207,6 +210,7 @@ export default function RegistroScreen({ navigation }) {
             <TextInput
               placeholder="Senha"
               placeholderTextColor="#aaa"
+              textColor="#000000"
               fontfamily="Poppins-Regular"
               style={styles.inputField}
               value={senha}
@@ -231,6 +235,7 @@ export default function RegistroScreen({ navigation }) {
               placeholder="Confirmar senha"
               fontfamily="Poppins-Regular"
               placeholderTextColor="#aaa"
+              textColor="#000000"
               style={styles.inputField}
               value={confirmarSenha}
               onChangeText={setConfirmarSenha}

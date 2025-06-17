@@ -157,6 +157,7 @@ export default function CreateDicaScreen({ navigation }) {
             style={styles.input}
             placeholder="Título da Dica"
             placeholderTextColor="#aaa"
+            textColor="#000000"
             fontfamily="poppins-bold"
             value={titulo}
             onChangeText={setTitulo}
@@ -166,6 +167,7 @@ export default function CreateDicaScreen({ navigation }) {
             style={[styles.input, styles.textArea]}
             placeholder="Conteúdo Detalhado da Dica"
             placeholderTextColor="#aaa"
+            textColor="#000000"
             fontfamily="poppins-bold"
             value={conteudo}
             onChangeText={setConteudo}
