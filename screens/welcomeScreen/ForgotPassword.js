@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   title: {
-    fontSize: height * 0.04,
+    fontSize: height * 0.033,
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 0,

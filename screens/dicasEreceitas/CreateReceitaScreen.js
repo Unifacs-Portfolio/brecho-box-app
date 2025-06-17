@@ -202,6 +202,7 @@ export default function CreateReceitasScreen({ navigation }) {
             style={styles.input}
             placeholder="Título da Receita"
             placeholderTextColor="#aaa"
+            textColor="#000000"
             fontfamily="poppins-bold"
             value={titulo}
             onChangeText={setTitulo}
@@ -211,6 +212,7 @@ export default function CreateReceitasScreen({ navigation }) {
             style={[styles.input, styles.textArea]}
             placeholder="Conteúdo Detalhado da Receita"
             placeholderTextColor="#aaa"
+            textColor="#000000"
             fontfamily="poppins-bold"
             value={conteudo}
             onChangeText={setConteudo}
@@ -220,8 +222,9 @@ export default function CreateReceitasScreen({ navigation }) {
           />
           <TextInput
             style={styles.input}
-            placeholder="URL do Vídeo (YouTube, opcional)"
+            placeholder="URL do Vídeo (YouTube, tiktok, outros)"
             placeholderTextColor="#aaa"
+            textColor="#000000"
             fontfamily="poppins-bold"
             value={youtubeUrl}
             onChangeText={setYoutubeUrl}

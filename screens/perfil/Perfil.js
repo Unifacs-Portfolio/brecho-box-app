@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     fontSize: width * 0.05, 
     fontWeight: 'bold', 
     textAlign: 'center', 
-    marginTop: height * 0.03, 
+    marginTop: height * 0.01, 
   }, 
 
   topCurve: { 
@@ -471,5 +471,5 @@ const styles = StyleSheet.create({
     fontSize: width * 0.045, 
     fontWeight: '600', 
     marginLeft: 10, 
-  }, 
+  }
 });
