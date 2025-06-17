@@ -137,7 +137,9 @@ export default function ModificarDados({ navigation, route }) {
 
       console.log('Dados enviados para a API:', updateData);
 
-      const response = await api.put(`/api/usuario/${userEmail}`, updateData, {
+      const id = await AsyncStorage.getItem('@currentUserId');
+
+      const response = await api.put(`/api/usuario/${id}`, updateData, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${userToken}`
