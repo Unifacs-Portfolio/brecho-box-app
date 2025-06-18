@@ -41,6 +41,11 @@ Utilize Visual Studio Code ou um editor de código equivalente.
 
 `email: brechobox@monitor.com | senha: 123321`
 
+* Instale o APK: 
+
+[APK](https://docs.google.com/uc?export=download&id=1AZVz13dd0DYkx5NPwjHPnn5w0l1smOyS)
+
+
 
 ## Beneficios do Projeto :
 * Incentivar a conscientização e educação dos jovens sobre práticas sustentáveis no dia a dia sobre moda.
