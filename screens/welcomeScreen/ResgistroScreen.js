@@ -48,12 +48,11 @@ export default function RegistroScreen({ navigation }) {
   };
 
   // Função para salvar os dados do usuário 
-  const saveUserData = async (emailToSave, nomeToSave, idToSave) => {
+  const saveUserData = async (emailToSave, nomeToSave) => {
     try {
       await AsyncStorage.setItem(`@userData:${emailToSave}`, JSON.stringify({ nome: nomeToSave }));
       await AsyncStorage.setItem('@currentUserEmail', emailToSave);
-      await AsyncStorage.setItem('@currentUserId', idToSave);
-      console.log('Dados do usuário salvos:', emailToSave, 'ID:', idToSave);
+      console.log('Dados do usuário salvos:', emailToSave);
     } catch (error) {
       console.error('Erro ao salvar dados do usuário:', error);
     }
