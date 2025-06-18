@@ -43,15 +43,15 @@ Utilize Visual Studio Code ou um editor de código equivalente.
 
 * Instale o APK: 
 
-[APK](https://docs.google.com/uc?export=download&id=1AZVz13dd0DYkx5NPwjHPnn5w0l1smOyS)
+[APK](https://docs.google.com/uc?export=download&id=1Fa4_5Ck9rtny1j43jBCR-HY4XRAcZczB)
 
 * Assista o vídeo: 
 
-[Youtube](https://www.youtube.com/watch?v=e6E13OWToco&list=RDe6E13OWToco&start_radio=1)
+[Youtube](https://youtu.be/Z95VkqalHeY)
 
 * Leia a documentação:
 
-[PDF](https://www.youtube.com/watch?v=e6E13OWToco&list=RDe6E13OWToco&start_radio=1)
+[PDF](https://docs.google.com/uc?export=download&id=1SdWxI3APRnCOT25CeKFtkv9Izhz_6KYh)
 
 
 ## Beneficios do Projeto :
