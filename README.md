@@ -45,6 +45,13 @@ Utilize Visual Studio Code ou um editor de código equivalente.
 
 [APK](https://docs.google.com/uc?export=download&id=1AZVz13dd0DYkx5NPwjHPnn5w0l1smOyS)
 
+* Assista o vídeo: 
+
+[Youtube](https://www.youtube.com/watch?v=e6E13OWToco&list=RDe6E13OWToco&start_radio=1)
+
+* Leia a documentação:
+
+[PDF](https://www.youtube.com/watch?v=e6E13OWToco&list=RDe6E13OWToco&start_radio=1)
 
 
 ## Beneficios do Projeto :
