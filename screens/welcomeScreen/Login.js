@@ -57,10 +57,9 @@ export default function Login({ navigation }) {
       const response = await api.post('/api/usuario/login', { email, senha: password });
       const { token } = response.data;
 
-      // CORREÇÃO FINAL: Acessa a função jwtDecode através da propriedade 'jwtDecode' do objeto 'jwt'
       const decodedToken = jwt.jwtDecode(token); 
       
-      const userId = decodedToken.userID; // Assumindo que o userId está na propriedade 'userID' do token
+      const userId = decodedToken.userId; 
 
       // Armazena o token, o e-mail e o userId do usuário
       await AsyncStorage.setItem('userToken', token);
