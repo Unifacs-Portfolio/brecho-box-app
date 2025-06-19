@@ -1593,10 +1593,15 @@
     serve-static "^1.16.2"
     ws "^6.2.3"
 
-"@react-native/gradle-plugin@0.79.3", "@react-native/gradle-plugin@^0.79.3":
+"@react-native/gradle-plugin@0.79.3":
   version "0.79.3"
   resolved "https://registry.npmjs.org/@react-native/gradle-plugin/-/gradle-plugin-0.79.3.tgz"
   integrity sha512-imfpZLhNBc9UFSzb/MOy2tNcIBHqVmexh/qdzw83F75BmUtLb/Gs1L2V5gw+WI1r7RqDILbWk7gXB8zUllwd+g==
+
+"@react-native/gradle-plugin@^0.80.0":
+  version "0.80.0"
+  resolved "https://registry.yarnpkg.com/@react-native/gradle-plugin/-/gradle-plugin-0.80.0.tgz#ec7ed5eb6c274068aa83b188b0192c584f1881ef"
+  integrity sha512-drmS68rabSMOuDD+YsAY2luNT8br82ycodSDORDqAg7yWQcieHMp4ZUOcdOi5iW+JCqobablT/b6qxcrBg+RaA==
 
 "@react-native/js-polyfills@0.79.3":
   version "0.79.3"
