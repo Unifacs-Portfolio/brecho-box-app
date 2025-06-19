@@ -30,7 +30,7 @@
     "expo-updates": "^0.28.14",
     "jwt-decode": "^4.0.0",
     "mime": "^4.0.7",
-    "react": "19.0.0",
+    "react": "19.1.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.53.0",
     "react-native": "0.79.3",
